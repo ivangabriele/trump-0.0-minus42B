@@ -1,4 +1,4 @@
-# trump-0.0-parameterless
+# `trump-0.0-minus42B`, the Trump LLM
 
 **An LLM exclusively trained on Twitter, X and Truth Social posts by Donald Trump.**
 
@@ -10,7 +10,6 @@ This is a self-educational project to learn how to train an LLM from scratch and
 
 ## Usage
 
-
 ### Getting started
 
 > [!IMPORTANT] Prerequisites
@@ -19,11 +18,10 @@ This is a self-educational project to learn how to train an LLM from scratch and
 > - **uv**
 
 ```sh
-git clone https://github.com/ivangabriele/trump-0.0-parameterless.git
-cd trump-0.0-parameterless
+git clone https://github.com/ivangabriele/trump-0.0-minus42B.git
+cd trump-0.0-minus42B
 uv sync
 ```
-
 
 ### Download Trump's social media posts
 
