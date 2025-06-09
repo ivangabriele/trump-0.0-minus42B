@@ -61,7 +61,7 @@ training_args = TrainingArguments(
     weight_decay=0.01,
 )
 
-trainer = Trainer(model=model, args=training_args, train_dataset=dataset)
+trainer = Trainer(model=model, args=training_args, train_dataset=dataset, processing_class=tokenizer)
 
 # Train the model
 trainer.train()
