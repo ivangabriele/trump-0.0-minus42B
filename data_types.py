@@ -173,9 +173,9 @@ class DataItemCommonProps(BaseModel):
     speaker: str
     speaker_id: str
     subject: str
-    text: str
+    text: Optional[str] = None
     type: str
-    word_count: int
+    word_count: Optional[int] = None
     deleted_flag: bool
     handle: str
     id: str
@@ -187,20 +187,21 @@ class DataItemCommonProps(BaseModel):
 class SocialForTruthSocial(BaseModel):
     author: str
     deleted_date: Optional[str]
-    favorite_count: int
+    favorite_count: Optional[int]
     hashtags: List[str]
     in_reply_to_screen_name: Any
     media_count: Any
     media_durations: Any
-    media_filenames: List[str]
-    media_filesizes: List[str]
+    media_filenames: List[str | int]
+    media_filesizes: List[int]
     media_urls: List[str]
-    post_text: str
+    post_html: Optional[str]
+    post_text: Optional[str]
     quote_flag: bool
-    repost_count: int
+    repost_count: Optional[int]
     repost_flag: bool
     urls: List[str]
-    user_mentions: List[str]
+    user_mentions: List[str | int]
     repost_id: Optional[str]
     quote_id: Optional[str]
 
@@ -213,14 +214,14 @@ class SocialForTwitter(BaseModel):
     in_reply_to_screen_name: Any
     media_count: Any
     media_durations: Any
-    media_filenames: List[str]
+    media_filenames: List[str | int]
     media_urls: List[str]
     post_text: str
     quote_flag: bool
     repost_count: Optional[int]
     repost_flag: bool
     urls: List[str]
-    user_mentions: List[str]
+    user_mentions: List[str | int]
     repost_id: Optional[str]
     quote_id: Optional[str]
 
