@@ -4,7 +4,8 @@
 
 Arguably the dumbest Large Language Model ever created.
 
-> [!WARNING] This a work in progress,
+> [!WARNING]  
+> This a work in progress,
 
 [^note]: _Twitter, X and Truth Social posts from 2009 to 2025._
 
@@ -16,7 +17,8 @@ This is a self-educational project to learn how to train an LLM from scratch and
 
 ### Getting started
 
-> [!IMPORTANT] Prerequisites
+> [!IMPORTANT]  
+> **Prerequisites:**
 > - **Git LFS** (to download the `data/` directory)
 > - **pyenv**
 > - **uv**
@@ -29,7 +31,8 @@ uv sync
 
 ### Download Trump's social media posts
 
-> [!WARNING] There are more than 80,000 posts.
+> [!WARNING]  
+> There are more than 80,000 posts.
 
 ```sh
 make data
@@ -39,7 +42,8 @@ make data
 
 _Not ready yet!_
 
-> [!WARNING] There are more than 80,000 posts.
+> [!WARNING]  
+> There are more than 80,000 posts.
 
 ```sh
 make prepare
