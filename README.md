@@ -11,7 +11,7 @@ Arguably the dumbest Large Language Model ever created.
 
 ## Why?
 
-This is a self-educational project to learn how to train an LLM from scratch and how to fine-tune pre-trained models.
+I needed a self-educational project to learn how to train an LLM from scratch and how to fine-tune pre-trained ones.
 
 ## Usage
 
