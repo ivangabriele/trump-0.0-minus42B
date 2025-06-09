@@ -175,9 +175,6 @@ pyrightconfig.json
 ################################################################################
 # Custom
 
-# Fetched API data
-/data
-
 # Training results
 /results
 
