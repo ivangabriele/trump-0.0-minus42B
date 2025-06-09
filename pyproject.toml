@@ -10,6 +10,7 @@ dependencies = [
   "datasets==3.6.0",
   "nltk==3.9.1",
   "pendulum==3.1.0",
+  "protobuf==6.31.1",
   "selenium==4.33.0",
   "torch==2.7.1",
   "transformers==4.52.4",
