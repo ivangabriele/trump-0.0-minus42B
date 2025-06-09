@@ -1,10 +1,14 @@
-# `trump-0.0-minus42B`, the Trump LLM
+# `trump-0.0-minus42B` - The Trump LLM
 
-**An LLM exclusively trained on Twitter, X and Truth Social posts by Donald Trump.**
+**A really dumb and opinionated LLM — exclusively trained on Donald J. Trump's social media posts[^note].**
 
 Arguably the dumbest Large Language Model ever created.
 
-## Why
+> [!WARNING] This a work in progress,
+
+[^note]: _Twitter, X and Truth Social posts from 2009 to 2025._
+
+## Why?
 
 This is a self-educational project to learn how to train an LLM from scratch and how to fine-tune pre-trained models.
 
@@ -33,10 +37,12 @@ make data
 
 ### Prepare the training data
 
+_Not ready yet!_
+
 > [!WARNING] There are more than 80,000 posts.
 
 ```sh
-make scrap
+make prepare
 ```
 
 ### Train model
@@ -55,17 +61,21 @@ make tune
 
 You can also specify a different model:
 
+_Not ready yet!_
+
 ```sh
 make tune MODEL=facebook/opt-350m
 ```
 
 #### Train from scratch
 
+_Not ready yet!_
+
 ```sh
 make train
 ```
 
-### Run model
+### Run model (CLI chat)
 
 Starts a CLI chat with the model.
 

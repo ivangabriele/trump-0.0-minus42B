@@ -1,6 +1,6 @@
 [project]
 name = "trump-0.0-minus42B"
-description = "A really dumb LLM exclusively trained on Twitter, X and Truth Social posts by Donald Trump."
+description = "A really dumb and opinionated LLM — exclusively trained on Donald J. Trump's social media posts."
 license = { text = "MIT" }
 version = "0.0.0"
 readme = "README.md"
