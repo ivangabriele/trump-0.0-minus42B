@@ -21,6 +21,16 @@ make scrap
 ### Train model
 
 ```sh
+.venv/bin/python
+```
+
+```python
+>>> import nltk
+>>> nltk.download('punkt')
+>>> nltk.download('punkt_tab')
+```
+
+```sh
 make train
 ```
 

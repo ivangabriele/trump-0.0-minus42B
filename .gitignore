@@ -177,3 +177,6 @@ pyrightconfig.json
 
 # SQLite database file
 /posts.db
+
+# Training results
+/results
