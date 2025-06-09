@@ -1,9 +1,13 @@
+import sqlite3
 import nltk  # type: ignore
 from nltk.tokenize import word_tokenize  # type: ignore
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.trainer import Trainer
 from transformers.training_args import TrainingArguments
+
+
+_SQLITE_DB_PATH = "posts.db"
 
 
 def preprocess_text(text):
@@ -36,32 +40,30 @@ nltk.download("punkt")
 nltk.download("punkt_tab")
 
 
-sample_text = "Your sample text goes here. You can add more pages of text as needed."
-tokens = preprocess_text(sample_text)
-print(tokens)
+def load_texts_from_db(db_path: str) -> list[str]:
+    db_connection = sqlite3.connect(db_path)
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT raw_text FROM posts ORDER BY date")
+    rows = cursor.fetchall()
+    db_connection.close()
+    return [r[0] for r in rows]
 
-# Load a small pretrained transformer model (e.g., tiny transformers like 'facebook/opt-125m')
-model_name = "facebook/opt-125m"  # You can choose smaller models if needed
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+texts = load_texts_from_db(_SQLITE_DB_PATH)
+print(f"Loaded {len(texts)} posts from `{_SQLITE_DB_PATH}`.")
+
+
+# model_name = "facebook/opt-1.3b"
+model_name = "facebook/opt-125m"
 model = AutoModelForCausalLM.from_pretrained(model_name)
-
-# Print model summary to see its structure
-print(model)
-
-
-# Prepare your dataset
-texts = [sample_text]  # Replace with actual text data
-
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 dataset = TextDataset(tokenizer, texts)
-
 training_args = TrainingArguments(
     output_dir="./results",
     per_device_train_batch_size=1,
     num_train_epochs=3,
     weight_decay=0.01,
 )
-
 trainer = Trainer(model=model, args=training_args, train_dataset=dataset, processing_class=tokenizer)
-
-# Train the model
+print(model)
 trainer.train()
