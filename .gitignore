@@ -175,8 +175,11 @@ pyrightconfig.json
 ################################################################################
 # Custom
 
-# SQLite database file
-/posts.db
+# Fetched API data
+/data
 
 # Training results
 /results
+
+# SQLite database file
+/posts.db
