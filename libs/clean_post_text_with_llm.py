@@ -10,7 +10,7 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 
-_PROMPT_DATA_PATH = "../prepare_prompt.json"
+_PROMPT_DATA_PATH = "../normalize_prompt.json"
 _LLM_MODEL = "google/gemma-3-1b-it"
 # _LLM_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
 # _LLM_MODEL = "QuantFactory/DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF"

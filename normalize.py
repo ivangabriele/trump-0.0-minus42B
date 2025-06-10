@@ -9,15 +9,16 @@ from data_types import ResponseBody
 import libs
 import utils
 
-_POSTS_DATA_DIR_NAME = "data"
-_SQLITE_DB_PATH = "posts.db"
+_POSTS_DATA_DIR_NAME = "data/posts"
+_SQLITE_DB_PATH = "data/posts.db"
 
 DEV_FILE_LIMIT = 2
 
 
 def initialize_database() -> sqlite3.Connection:
-    conn = sqlite3.connect(_SQLITE_DB_PATH)
-    cursor = conn.cursor()
+    db_connection = sqlite3.connect(_SQLITE_DB_PATH)
+
+    cursor = db_connection.cursor()
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS posts (
@@ -28,8 +29,9 @@ def initialize_database() -> sqlite3.Connection:
         )
         """
     )
-    conn.commit()
-    return conn
+    db_connection.commit()
+
+    return db_connection
 
 
 def clean_page(page: int, conn: sqlite3.Connection):
@@ -64,7 +66,7 @@ def clean_page(page: int, conn: sqlite3.Connection):
         print("\n┏" + "━" * 118 + "┓")
         print(f"┃ ID:\t\t{post_id}" + " " * 39 + "┃")
         print(f"┃ Raw date:\t{post.date}" + " " * (120 - 17 - len(post.date)) + "┃")
-        print(f"┃ Clean Date:\t{post.date}" + " " * (120 - 22 - len(post.date)) + "┃")
+        print(f"┃ Clean Date:\t{post.date}" + " " * (120 - 20 - len(post.date)) + "┃")
         print("┠" + "─" * 118 + "┨")
         utils.print_boxed_text(raw_text, 120)
         print("┠" + "─" * 118 + "┨")

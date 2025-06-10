@@ -7,7 +7,7 @@ from transformers.trainer import Trainer
 from transformers.training_args import TrainingArguments
 
 
-_SQLITE_DB_PATH = "posts.db"
+_SQLITE_DB_PATH = "data/posts.db"
 
 
 def preprocess_text(text):
