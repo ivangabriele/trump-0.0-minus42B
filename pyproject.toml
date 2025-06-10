@@ -1,5 +1,5 @@
 [project]
-name = "trump-0.0-minus42B"
+name = "Trump-0.0-minus42B"
 description = "A really dumb and opinionated LLM — exclusively trained on Donald J. Trump's social media posts."
 license = { text = "MIT" }
 version = "0.0.0"
@@ -18,7 +18,14 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["mypy==1.16.0", "pydantic==2.11.5", "pytest==8.4.0", "ruff==0.11.13", "types-requests==2.32.0.20250602"]
+dev = [
+  "huggingface-hub==0.32.4",
+  "mypy==1.16.0",
+  "pydantic==2.11.5",
+  "pytest==8.4.0",
+  "ruff==0.11.13",
+  "types-requests==2.32.0.20250602",
+]
 
 
 [tool.ruff]
