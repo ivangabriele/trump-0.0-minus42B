@@ -8,3 +8,6 @@ scrap:
 	.venv/bin/python ./scrap.py
 tune:
 	.venv/bin/python ./tune.py
+
+test:
+	.venv/bin/pytest -vv
