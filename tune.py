@@ -6,8 +6,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.trainer import Trainer
 from transformers.training_args import TrainingArguments
 
-
-_SQLITE_DB_PATH = "data/posts.db"
+from constants import SQLITE_DB_FILE_PATH
 
 
 def preprocess_text(text):
@@ -49,8 +48,8 @@ def load_texts_from_db(db_path: str) -> list[str]:
     return [r[0] for r in rows]
 
 
-texts = load_texts_from_db(_SQLITE_DB_PATH)
-print(f"Loaded {len(texts)} posts from `{_SQLITE_DB_PATH}`.")
+texts = load_texts_from_db(SQLITE_DB_FILE_PATH)
+print(f"Loaded {len(texts)} posts from `{SQLITE_DB_FILE_PATH}`.")
 
 
 # model_name = "facebook/opt-1.3b"
