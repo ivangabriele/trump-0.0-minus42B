@@ -19,11 +19,11 @@ Arguably the dumbest Large Language Model ever created.
   - [1. Download Trump's social media posts](#1-download-trumps-social-media-posts)
   - [2. Teach the Generator LLM Preference Dataset](#2-teach-the-generator-llm-preference-dataset)
   - [3. Prepare the Generator LLM](#3-prepare-the-generator-llm)
-  - [3. Generate the training data](#3-generate-the-training-data)
-  - [4. Train Trump model](#4-train-trump-model)
+  - [4. Generate the training data](#4-generate-the-training-data)
+  - [5. Train Trump LLM](#5-train-trump-llm)
     - [From a pre-trained model](#from-a-pre-trained-model)
     - [From scratch](#from-scratch)
-  - [5. Run model (CLI chat)](#5-run-model-cli-chat)
+  - [6. Run Trump LLM (CLI chat)](#6-run-trump-llm-cli-chat)
 
 ---
 
@@ -40,7 +40,7 @@ I needed a self-educational project to learn how to train an LLM from scratch an
     1. Human Feedback
     2. RM (Reward Model)
     3. PPO (Proximal Policy Optimization)
-- Training
+- Training (from scratch)
 
 ## Local Run & Development
 
@@ -137,7 +137,7 @@ and apllying RLHF techniques, such as RM and PPO, to optimize the Generator LLM 
 make prepare
 ```
 
-### 3. Generate the training data
+### 4. Generate the training data
 
 _Not ready yet!_
 
@@ -149,7 +149,7 @@ This script normalizes the posts using the custom Generator LLM and update them 
 make generate
 ```
 
-### 4. Train Trump model
+### 5. Train Trump LLM
 
 You have 2 choices here:
 - Either fine-tune a pre-trained model, by default `facebook/opt-125m`.
@@ -168,8 +168,10 @@ You can also specify a different model:
 _Not ready yet!_
 
 ```sh
-make tune MODEL=facebook/opt-350m
+pyhton tune.py <MODEL_NAME>
 ```
+
+where `<MODEL_NAME>` is the name of the pre-trained model you want to use, e.g. `facebook/opt-350m`, etc.
 
 #### From scratch
 
@@ -179,7 +181,7 @@ _Not ready yet!_
 make train
 ```
 
-### 5. Run model (CLI chat)
+### 6. Run Trump LLM (CLI chat)
 
 Starts a CLI chat with the model.
 
