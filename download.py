@@ -2,34 +2,31 @@ from os import path
 import os
 import time
 import requests
+from constants import DOWNLOAD_API_URL, POSTS_DATA_DIR_PATH
 from download_types import RequestParams, ResponseBody, SortOrder
 
 
-_API_URL = "https://api.factsquared.com/json/factba.se-trump-social.php"
-_POSTS_DATA_DIR_PATH = "data/posts"
-
-
 def has_page(page: int) -> bool:
-    data_file_path = path.join(path.dirname(__file__), _POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
+    data_file_path = path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
 
     return path.exists(data_file_path)
 
 
 def get_page(page: int) -> ResponseBody:
     params: RequestParams = RequestParams(page=page, sort="date", sort_order=SortOrder.ASC)
-    response = requests.get(_API_URL, params=params)
+    response = requests.get(DOWNLOAD_API_URL, params=params)
 
     return ResponseBody.model_validate(response.json())
 
 
 def save_page(page: int, body: ResponseBody) -> None:
-    data_file_path = path.join(path.dirname(__file__), _POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
+    data_file_path = path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
     with open(data_file_path, "w") as file:
         file.write(body.model_dump_json(indent=2))
 
 
 def main():
-    os.makedirs(_POSTS_DATA_DIR_PATH, exist_ok=True)
+    os.makedirs(POSTS_DATA_DIR_PATH, exist_ok=True)
 
     page = 1
     print("Info: Fetching page 0001 / ????...")
