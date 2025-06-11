@@ -5,32 +5,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from constants import POSTS_DATA_DIR_PATH, SQLITE_DB_FILE_PATH
+from constants import POSTS_DATA_DIR_PATH
 from download_types import ResponseBody
 import libs
 import utils
-
-
-DEV_FILE_LIMIT = 2
-
-
-def initialize_database() -> sqlite3.Connection:
-    db_connection = sqlite3.connect(SQLITE_DB_FILE_PATH)
-
-    cursor = db_connection.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS posts (
-            id TEXT PRIMARY KEY,
-            date TEXT NOT NULL,
-            raw_text TEXT
-            clean_text TEXT
-        )
-        """
-    )
-    db_connection.commit()
-
-    return db_connection
 
 
 def clean_page(page: int, conn: sqlite3.Connection):
@@ -85,7 +63,7 @@ def clean_page(page: int, conn: sqlite3.Connection):
 
 def main():
     print("Info: Initializing database...")
-    db_connection = initialize_database()
+    db_connection = libs.initialize_database()
 
     page = 0
     total_pages = len(list(Path(path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH)).glob("*.json")))

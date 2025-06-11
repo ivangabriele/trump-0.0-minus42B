@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 import random
 
 from pydantic import ValidationError
-from download_types import ResponseBody, DataItem
+from download_types import ResponseBody, JsonPost
 import libs
 from prepare_types import FeedbackData, FeedbackDataComparisonPair, FeedbackDataStfPair
 import utils
@@ -17,8 +17,8 @@ _SAMPLE_SIZE = 10
 _MAX_ATTEMPTS = 3
 
 
-def load_posts() -> List[DataItem]:
-    posts: List[DataItem] = []
+def load_posts() -> List[JsonPost]:
+    posts: List[JsonPost] = []
     for json_file in Path(_POSTS_DATA_DIR_PATH).glob("*.json"):
         with open(json_file, "r") as f:
             try:
@@ -32,7 +32,7 @@ def load_posts() -> List[DataItem]:
     return posts
 
 
-def collect_feedback(post: DataItem, sample_index: int) -> Optional[Tuple[str, List[str]]]:
+def collect_feedback(post: JsonPost, sample_index: int) -> Optional[Tuple[str, List[str]]]:
     if not post.text:
         return None
 

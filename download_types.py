@@ -129,7 +129,7 @@ from pydantic import BaseModel, Field
 
 
 ################################################################################
-# Request
+# API Request
 
 
 class SortOrder(str, Enum):
@@ -144,7 +144,7 @@ class RequestParams(BaseModel):
 
 
 ################################################################################
-# Response
+# API Response
 
 
 class MetaPagination(BaseModel):
@@ -226,19 +226,19 @@ class SocialForTwitter(BaseModel):
     quote_id: Optional[str]
 
 
-class DataItemForTruthSocial(DataItemCommonProps):
+class JsonPostForTruthSocial(DataItemCommonProps):
     account_url: str
     platform: Literal["Truth Social"]
     social: SocialForTruthSocial
 
 
-class DataItemForTwitter(DataItemCommonProps):
+class JsonPostForTwitter(DataItemCommonProps):
     client: Optional[str] = None
     platform: Literal["Twitter"]
     social: SocialForTwitter
 
 
-DataItem = DataItemForTruthSocial | DataItemForTwitter
+JsonPost = JsonPostForTruthSocial | JsonPostForTwitter
 
 
 class StatsDeleted(BaseModel):
@@ -259,5 +259,5 @@ class Stats(BaseModel):
 
 class ResponseBody(BaseModel):
     meta: Meta
-    data: list[DataItem]
+    data: list[JsonPost]
     stats: Stats
