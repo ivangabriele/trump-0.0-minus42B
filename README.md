@@ -84,21 +84,58 @@ provide the best normalized output for each post. The model used for this step i
 prompt living in `generator_prompt.json`.
 
 ```sh
-make teach <SAMPLE_SIZE>
+python teach.py <SAMPLE_SIZE>
+```
+
+where `<SAMPLE_SIZE>` is the posts random sample size to use for the human feedback dataset. It's a mandatory positional
+argument.
+
+**Data Collection Sanples:**
+
+```text
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║ SAMPLE 1 / 5                                                                                                         ║
+╟──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╢
+║ ID:   8e591a8ce0bf9372faf9ef36ae535787994781aed4fac45eee87905a57e2dc99                                               ║
+║ Date: 2019-08-31T11:58:57Z                                                                                           ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+════════════════════════════════════════════════════ ORIGINAL TEXT ═════════════════════════════════════════════════════
+RT @SenateGOP: .@SenatorIsakson serves the people of Georgia with honor, distinction and deep devotion. Johnny is a true gentleman. A pow…
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Senate GOP: Senator Isakson serves the people of Georgia with honor, distinction, and deep devotion. Johnny is a true gentleman. A pow…
+
+❌ Rejected.                                                                    
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Senator Isakson serves the people of Georgia with honor, distinction, and deep devotion. Johnny is a true gentleman.
+
+✔️ Accepted.                                                                    
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+```
+
+```text
+════════════════════════════════════════════════════ ORIGINAL TEXT ═════════════════════════════════════════════════════
+RT @MTG THE GULF OF AMERICA! 🇺🇸
+# ...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 3 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RT @MTG: The Gulf of America!
+
+❌ Rejected.                                                                    
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HUMAN PROPOSAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> THE GULF OF AMERICA! 🇺🇸
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 ```
 
 ### 3. Prepare the Generator LLM
 
 _Not ready yet!_
 
-This script build the Generator LLM by fine-tuning a pre-trained model using RM and PPO.
+This script builds the Generator LLM by fine-tuning a pre-trained model using the previously generated human preference
+and apllying RLHF techniques, such as RM and PPO, to optimize the Generator LLM for post text normalization.
 
 ```sh
 make prepare
 ```
-
-where `<SAMPLE_SIZE>` is the posts random sample size to use for the human feedback dataset. It's a mandatory positional
-argument.
 
 ### 3. Generate the training data
 

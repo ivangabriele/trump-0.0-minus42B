@@ -9,7 +9,8 @@
 		"**Handle Self-Attribution:** If a quote is attributed to Donald Trump (e.g., '...-Donald J. Trump' or '...says Donald Trump'), remove the attribution and the quotation marks, presenting the text as a direct statement.",
 		"**Handle Hashtags:** Replace hashtags with their full text equivalents only if they are meaningful within the main text. Otherwise, remove them entirely.",
 		"**Clean Punctuation:** Fix spacing around punctuation and correct obvious errors (e.g., change '...tonight @ 9pm...' to '...tonight at 9pm...'). Add punctuation if that makes the text clearer.",
-		"**Preserve Original Text:** Keep the original wording, phrasing, and letter casing of the main text."
+		"**Preserve Original Text:** Keep the original wording, phrasing, letter casing, and emojis of the main text.",
+		"**Avoid Full Wrapping Quotes:** Do not add quotation marks around the entire text, even if it is a quote. Only use quotation marks for direct quotes within the text."
 	],
 	"examples": [
 		[
@@ -59,6 +60,14 @@
 		[
 			"President Obama, I have an idea! Pretend that West Africa is Israel and then you will be able to stop the Ebola area flights.",
 			"President Obama, I have an idea! Pretend that West Africa is Israel, and then you will be able to stop the Ebola area flights."
+		],
+		[
+			"“Give me a smart idiot over a stupid genius any day.” - Samuel Goldwyn",
+			"Give me a smart idiot over a stupid genius any day."
+		],
+		[
+			"They must be kidding - can this be happening #Oscars",
+			"They must be kidding. Can this be happening at the Oscars?"
 		]
 	]
 }

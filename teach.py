@@ -1,3 +1,4 @@
+import argparse
 import json
 from os import path
 from typing import List, Optional, Tuple
@@ -10,77 +11,7 @@ from _types.generator_types import PreferenceDataset, PreferenceDatasetCompariso
 import utils
 
 # Configuration
-_SAMPLE_SIZE = 10
 _MAX_ATTEMPTS = 3
-
-
-def _load_posts() -> List[DatabasePost]:
-    db_connection = libs.initialize_database()
-
-    cursor = db_connection.cursor()
-    cursor.execute("SELECT * FROM posts")
-
-    rows = cursor.fetchall()
-
-    cursor.close()
-    db_connection.close()
-
-    return [DatabasePost.model_validate(row) for row in rows]
-
-
-def _collect_human_feedback(post: DatabasePost, sample_index: int) -> Optional[Tuple[str, List[str]]]:
-    rejected_texts: List[str] = []
-
-    print("")
-    print("╔" + "═" * 118 + "╗")
-    utils.print_boxed_text(
-        f"POST {str(sample_index + 1).rjust(len(str(_SAMPLE_SIZE)), '0')} / {_SAMPLE_SIZE}", 120, "║"
-    )
-    print("╟" + "─" * 118 + "╢")
-    utils.print_boxed_text(f"ID:   {post.id}", 120, "║")
-    utils.print_boxed_text(f"Date: {post.date}", 120, "║")
-    print("╟" + "─" * 118 + "╢")
-    utils.print_boxed_text(post.raw_text, 120, "║")
-    print("╚" + "═" * 118 + "╝")
-
-    for attempt in range(_MAX_ATTEMPTS):
-        if not post.raw_text:
-            return None
-
-        proposed_text = libs.clean_post_text_with_llm(post.raw_text, attempt=attempt)
-        print("")
-        print("┏" + "━" * 118 + "┓")
-        utils.print_boxed_text(f"PROPOSAL {attempt + 1}", 120, "┃")
-        print("┠" + "─" * 118 + "┨")
-        utils.print_boxed_text(proposed_text, 120, "┃")
-        print("┠" + "─" * 118 + "┨")
-
-        print("┃ Accept? Press [y] (yes), [n] (no) or [s] (skip)... ", end="", flush=True)
-        choice = utils.get_input_key()
-        print("\r" + " " * 120, end="", flush=True)
-        print("\r", end="", flush=True)
-
-        if choice == "y":
-            utils.print_boxed_text("Human Feedback: Accepted.", 120, "┃")
-            print("┗" + "━" * 118 + "┛")
-
-            return proposed_text, rejected_texts
-        elif choice == "n":
-            utils.print_boxed_text("Human Feedback: Rejected.", 120, "┃")
-
-            rejected_texts.append(proposed_text)
-        else:
-            utils.print_boxed_text("Human Feedback: Skipped.", 120, "┃")
-            print("┗" + "━" * 118 + "┛")
-
-            return None
-
-    print("")
-    print("┃ Please write the expected output for this post:")
-    expected_text = input("┃ > ").strip()
-    print("┗" + "━" * 118 + "┛")
-
-    return expected_text, rejected_texts
 
 
 def _load_preference_dataset() -> PreferenceDataset:
@@ -97,17 +28,92 @@ def _load_preference_dataset() -> PreferenceDataset:
     return PreferenceDataset.model_validate(data)
 
 
-def _save_preference_dataset(feedback_data: PreferenceDataset, batch_page: int):
+def _load_posts() -> List[DatabasePost]:
+    db_connection = libs.initialize_database()
+
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT * FROM posts")
+
+    rows = cursor.fetchall()
+    print(rows[0])
+
+    cursor.close()
+    db_connection.close()
+
+    # TODO Use SQLAlchemy?
+    return [DatabasePost(id=row[0], date=row[1], raw_text=row[2], clean_text=row[3]) for row in rows]
+
+
+def _collect_human_feedback(post: DatabasePost, sample_size: int, sample_index: int) -> Optional[Tuple[str, List[str]]]:
+    rejected_texts: List[str] = []
+
+    print("")
+    print("╔" + "═" * 118 + "╗")
+    utils.print_boxed_text(
+        f"SAMPLE {str(sample_index + 1).rjust(len(str(sample_size)), '0')} / {sample_size}", 120, "║"
+    )
+    print("╟" + "─" * 118 + "╢")
+    utils.print_boxed_text(f"ID:   {post.id}", 120, "║")
+    utils.print_boxed_text(f"Date: {post.date}", 120, "║")
+    print("╚" + "═" * 118 + "╝")
+    print("")
+
+    utils.print_horizontal_line("═", "ORIGINAL TEXT")
+    print(post.raw_text)
+
+    for attempt in range(_MAX_ATTEMPTS):
+        if not post.raw_text:
+            return None
+
+        proposed_text = libs.clean_post_text_with_llm(post.raw_text, attempt=attempt)
+        utils.print_horizontal_line("━", f"GENERATOR LLM PROPOSAL {attempt + 1}")
+        print(proposed_text)
+
+        print("")
+        print("> Accept? Press [y] (yes), [n] (no) or [s] (skip)... ", end="", flush=True)
+        choice = utils.get_input_key()
+        print("\r" + " " * 80, end="", flush=True)
+        print("\r", end="", flush=True)
+
+        if choice == "y":
+            print("✔️ Accepted.")
+            utils.print_horizontal_line("═")
+
+            return proposed_text, rejected_texts
+        elif choice == "n":
+            print("❌ Rejected.")
+
+            rejected_texts.append(proposed_text)
+        else:
+            print("⭕ Skipped.")
+            utils.print_horizontal_line("═")
+
+            return None
+
+    utils.print_horizontal_line("━", "HUMAN PROPOSAL")
+    expected_text = input("> ").strip()
+    utils.print_horizontal_line("═")
+
+    return expected_text, rejected_texts
+
+
+def _save_preference_dataset(preference_dataset: PreferenceDataset, batch_page: int):
     preference_dataset_path = path.join(path.dirname(__file__), PREFERENCE_DATASET_PATH)
 
     with open(preference_dataset_path, "w") as file:
-        json.dump(feedback_data, file, indent=2)
+        file.write(preference_dataset.model_dump_json(indent=2, by_alias=True))
 
     print("")
     print(f"Info: Preference Dataset saved to `{preference_dataset_path}`.")
 
 
 def main():
+    parser = argparse.ArgumentParser("simple_example")
+    parser.add_argument("sample_size", help="The number of posts to sample", type=int, nargs="?")
+    args = parser.parse_args()
+    if args.sample_size is None:
+        utils.print_error_and_exit("Please provide the number of posts to sample: `python teach.py <sample_size>`.")
+
     preference_dataset = _load_preference_dataset()
     print(
         f"Info: Loaded the existing Preference Dataset with {len(preference_dataset.sft_pairs)} SFT pairs and {len(preference_dataset.comparison_pairs)} comparison pairs."
@@ -116,11 +122,11 @@ def main():
 
     all_posts = _load_posts()
     filtered_posts = [post for post in all_posts if post.id not in preference_dataset_ids]
-    sampled_posts = random.sample(filtered_posts, _SAMPLE_SIZE)
+    sampled_posts = random.sample(filtered_posts, args.sample_size)
     print(f"Info: Loaded a ramdom sample of {len(sampled_posts)} posts.")
 
     for sample_index, post in enumerate(sampled_posts):
-        result = _collect_human_feedback(post, sample_index)
+        result = _collect_human_feedback(post, args.sample_size, sample_index)
         if result is None:
             continue
 

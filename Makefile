@@ -1,17 +1,17 @@
-.PHONY: chat data normalize prepare tune test
+.PHONY: download teach prepare generate tune train chat test
 
 download:
 	.venv/bin/python ./download.py
 teach:
-	.venv/bin/python ./teach.py
-# prepare:
-# 	.venv/bin/python ./prepare.py
+	@echo "Error: Please run this script manually: \`python ./teach.py <SAMPLE_SIZE>\`."
+prepare:
+	@echo "Error: Not implemented yet.."
 generate:
 	.venv/bin/python ./generate.py
 tune:
 	.venv/bin/python ./tune.py
-# train:
-# 	.venv/bin/python ./train.py
+train:
+	@echo "Error: Not implemented yet.."
 chat:
 	.venv/bin/python ./chat.py
 
