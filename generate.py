@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from constants import POSTS_DATA_DIR_PATH
-from download_types import ResponseBody
+from _types.json_data_types import ResponseBody
 import libs
 import utils
 

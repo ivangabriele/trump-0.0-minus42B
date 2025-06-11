@@ -2,12 +2,16 @@
 
 download:
 	.venv/bin/python ./download.py
-prepare:
-	.venv/bin/python ./prepare.py
+teach:
+	.venv/bin/python ./teach.py
+# prepare:
+# 	.venv/bin/python ./prepare.py
 generate:
 	.venv/bin/python ./generate.py
 tune:
 	.venv/bin/python ./tune.py
+# train:
+# 	.venv/bin/python ./train.py
 chat:
 	.venv/bin/python ./chat.py
 

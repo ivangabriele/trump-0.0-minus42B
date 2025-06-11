@@ -8,8 +8,8 @@ import pendulum
 import requests
 import validators
 from constants import DOWNLOAD_API_URL, POSTS_DATA_DIR_PATH
-from database_types import DatabasePost
-from download_types import JsonPost, RequestParams, ResponseBody, SortOrder
+from _types.database_types import DatabasePost
+from _types.json_data_types import JsonPost, RequestParams, ResponseBody, SortOrder
 import libs
 import utils
 

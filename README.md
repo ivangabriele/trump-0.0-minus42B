@@ -17,7 +17,8 @@ Arguably the dumbest Large Language Model ever created.
 - [Local Run \& Development](#local-run--development)
   - [Getting started](#getting-started)
   - [1. Download Trump's social media posts](#1-download-trumps-social-media-posts)
-  - [2. Build the Generator LLM](#2-build-the-generator-llm)
+  - [2. Teach the Generator LLM Preference Dataset](#2-teach-the-generator-llm-preference-dataset)
+  - [3. Prepare the Generator LLM](#3-prepare-the-generator-llm)
   - [3. Generate the training data](#3-generate-the-training-data)
   - [4. Train Trump model](#4-train-trump-model)
     - [From a pre-trained model](#from-a-pre-trained-model)
@@ -76,17 +77,28 @@ training (e.g. images, videos, etc.).
 make download
 ```
 
-### 2. Build the Generator LLM
+### 2. Teach the Generator LLM Preference Dataset
 
 This script generates a human preference (feedback) dataset (`data/preference.json`) using your RLHF to select or
 provide the best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot
 prompt living in `generator_prompt.json`.
 
-It then proceeds to build the Generator LLM by fine-tuning a pre-trained model using RM and PPO.
+```sh
+make teach <SAMPLE_SIZE>
+```
+
+### 3. Prepare the Generator LLM
+
+_Not ready yet!_
+
+This script build the Generator LLM by fine-tuning a pre-trained model using RM and PPO.
 
 ```sh
 make prepare
 ```
+
+where `<SAMPLE_SIZE>` is the posts random sample size to use for the human feedback dataset. It's a mandatory positional
+argument.
 
 ### 3. Generate the training data
 

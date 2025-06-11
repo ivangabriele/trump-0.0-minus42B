@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple
 import random
 
 from constants import PREFERENCE_DATASET_PATH
-from database_types import DatabasePost
+from _types.database_types import DatabasePost
 import libs
-from prepare_types import PreferenceDataset, PreferenceDatasetComparisonPair, PreferenceDatasetStfPair
+from _types.generator_types import PreferenceDataset, PreferenceDatasetComparisonPair, PreferenceDatasetStfPair
 import utils
 
 # Configuration
