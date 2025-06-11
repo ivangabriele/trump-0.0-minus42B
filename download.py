@@ -2,7 +2,7 @@ from os import path
 import os
 import time
 import requests
-from data_types import RequestParams, ResponseBody, SortOrder
+from download_types import RequestParams, ResponseBody, SortOrder
 
 
 _API_URL = "https://api.factsquared.com/json/factba.se-trump-social.php"

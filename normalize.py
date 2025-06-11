@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from data_types import ResponseBody
+from download_types import ResponseBody
 import libs
 import utils
 

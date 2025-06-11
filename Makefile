@@ -2,8 +2,8 @@
 
 chat:
 	.venv/bin/python ./chat.py
-data:
-	.venv/bin/python ./data.py
+download:
+	.venv/bin/python ./download.py
 prepare:
 	.venv/bin/python ./prepare.py
 normalize:

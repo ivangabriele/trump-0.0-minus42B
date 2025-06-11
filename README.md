@@ -73,7 +73,7 @@ Twitter/X posts that are split into multiple tweets (e.g. threads), and filterin
 training (e.g. images, videos, etc.).
 
 ```sh
-make data
+make download
 ```
 
 ### 2. Build the Generator LLM

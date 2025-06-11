@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 import random
 
 from pydantic import ValidationError
-from data_types import ResponseBody, DataItem
+from download_types import ResponseBody, DataItem
 import libs
 from prepare_types import FeedbackData, FeedbackDataComparisonPair, FeedbackDataStfPair
 import utils
