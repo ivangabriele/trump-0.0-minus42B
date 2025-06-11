@@ -5,18 +5,17 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from constants import POSTS_DATA_DIR_PATH, SQLITE_DB_FILE_PATH
 from download_types import ResponseBody
 import libs
 import utils
 
-_POSTS_DATA_DIR_NAME = "data/posts"
-_SQLITE_DB_PATH = "data/posts.db"
 
 DEV_FILE_LIMIT = 2
 
 
 def initialize_database() -> sqlite3.Connection:
-    db_connection = sqlite3.connect(_SQLITE_DB_PATH)
+    db_connection = sqlite3.connect(SQLITE_DB_FILE_PATH)
 
     cursor = db_connection.cursor()
     cursor.execute(
@@ -35,7 +34,7 @@ def initialize_database() -> sqlite3.Connection:
 
 
 def clean_page(page: int, conn: sqlite3.Connection):
-    data_file_path = path.join(path.dirname(__file__), _POSTS_DATA_DIR_NAME, str(page).rjust(4, "0") + ".json")
+    data_file_path = path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
 
     print("\n╔" + "═" * 118 + "╗")
     print(f"║ {str(page).rjust(4, '0')}" + " " * (120 - 7) + "║")
@@ -89,7 +88,7 @@ def main():
     db_connection = initialize_database()
 
     page = 0
-    total_pages = len(list(Path(path.join(path.dirname(__file__), _POSTS_DATA_DIR_NAME)).glob("*.json")))
+    total_pages = len(list(Path(path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH)).glob("*.json")))
     print(f"Info: Found {total_pages} pages.")
     while page < total_pages:
         page += 1

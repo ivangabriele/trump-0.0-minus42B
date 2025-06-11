@@ -10,11 +10,7 @@ from transformers.generation.utils import GenerationMixin
 from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
-
-_PROMPT_DATA_PATH = "../normalize_prompt.json"
-_LLM_MODEL = "google/gemma-3-1b-it"
-# _LLM_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
-# _LLM_MODEL = "QuantFactory/DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF"
+from constants import GENERATOR_LLM_MODEL, GENERATOR_PROMPT_CONFIG_PATH
 
 
 class _Cache(BaseModel):
@@ -24,7 +20,7 @@ class _Cache(BaseModel):
     model: Optional[PreTrainedModel | GenerationMixin]
 
 
-class _CleanPostTextPrompt(BaseModel):
+class _GeneratorPromptConfig(BaseModel):
     role: str
     task: str
     rules: list[str]
@@ -53,11 +49,11 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     )
 
     print("Info: Initializing LLM...")
-    tokenizer = AutoTokenizer.from_pretrained(_LLM_MODEL)
+    tokenizer = AutoTokenizer.from_pretrained(GENERATOR_LLM_MODEL)
     assert isinstance(tokenizer, PreTrainedTokenizerBase), "`tokenizer` should be of type `PreTrainedTokenizerBase`."
     # The `device_map="auto"` will intelligently use the GPU if available.
     # Using bfloat16 for a smaller memory footprint.
-    model = AutoModelForCausalLM.from_pretrained(_LLM_MODEL, device_map="auto", torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(GENERATOR_LLM_MODEL, device_map="auto", torch_dtype=torch.bfloat16)
     assert isinstance(model, GenerationMixin), "`model` should be of type `GenerationMixin`."
     assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
 
@@ -70,7 +66,7 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     #     "<|start_header_id|>assistant<|end_header_id|>\n\n"
     # )
 
-    _config = AutoConfig.from_pretrained(_LLM_MODEL)
+    _config = AutoConfig.from_pretrained(GENERATOR_LLM_MODEL)
     # print("=" * 120)
     # print("CONFIGURATION:")
     # print("-" * 120)
@@ -84,20 +80,20 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
 
 
 def _get_cleaning_prompt(raw_text: str) -> str:
-    prompt_data_path = path.join(path.dirname(__file__), _PROMPT_DATA_PATH)
-    with open(prompt_data_path, "r", encoding="utf-8") as prompt_data_file:
-        prompt_data = _CleanPostTextPrompt.model_validate_json(prompt_data_file.read())
+    prompt_config_path = path.join(path.dirname(__file__), "..", GENERATOR_PROMPT_CONFIG_PATH)
+    with open(prompt_config_path, "r", encoding="utf-8") as prompt_data_file:
+        prompt_config = _GeneratorPromptConfig.model_validate_json(prompt_data_file.read())
 
     prompt_lines = [
-        prompt_data.role,
+        prompt_config.role,
         "",
-        f"{prompt_data.task} You MUST follow these rules:",
-        *[f"{i + 1}. {rule}" for i, rule in enumerate(prompt_data.rules)],
+        f"{prompt_config.task} You MUST follow these rules:",
+        *[f"{i + 1}. {rule}" for i, rule in enumerate(prompt_config.rules)],
         "",
         "Here are some examples:",
     ]
 
-    for example_input, example_output in prompt_data.examples:
+    for example_input, example_output in prompt_config.examples:
         prompt_lines.extend(["", f"RAW TEXT:\n`{example_input}`", f"NORMALIZED TEXT:\n`{example_output}`\n"])
 
     prompt_lines.extend(
