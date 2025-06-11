@@ -78,9 +78,11 @@ make download
 
 ### 2. Build the Generator LLM
 
-This script generates a full RLHF (reinforcement learning from human feedback) by prompting you to select or provide the
-best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot prompt living
-in `normalize_prompt.json`.
+This script generates a human preference (feedback) dataset (`data/preference.json`) using your RLHF to select or
+provide the best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot
+prompt living in `generator_prompt.json`.
+
+It then proceeds to build the Generator LLM by fine-tuning a pre-trained model using RM and PPO.
 
 ```sh
 make prepare
@@ -90,10 +92,8 @@ make prepare
 
 _Not ready yet!_
 
-This script normalizes the posts using the fine-tuned Generator LLM.
-
-It then update the local SQLite database `data/posts.db` with the normalized text which will be used to train the final
-Trump model.
+This script normalizes the posts using the custom Generator LLM and update them in the local SQLite database
+`data/posts.db`.
 
 
 ```sh
