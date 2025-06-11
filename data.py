@@ -6,11 +6,11 @@ from data_types import RequestParams, ResponseBody, SortOrder
 
 
 _API_URL = "https://api.factsquared.com/json/factba.se-trump-social.php"
-_DATA_DIR_PATH = "data/posts"
+_POSTS_DATA_DIR_PATH = "data/posts"
 
 
 def has_page(page: int) -> bool:
-    data_file_path = path.join(path.dirname(__file__), _DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
+    data_file_path = path.join(path.dirname(__file__), _POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
 
     return path.exists(data_file_path)
 
@@ -23,13 +23,13 @@ def get_page(page: int) -> ResponseBody:
 
 
 def save_page(page: int, body: ResponseBody) -> None:
-    data_file_path = path.join(path.dirname(__file__), _DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
+    data_file_path = path.join(path.dirname(__file__), _POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
     with open(data_file_path, "w") as file:
         file.write(body.model_dump_json(indent=2))
 
 
 def main():
-    os.makedirs(_DATA_DIR_PATH, exist_ok=True)
+    os.makedirs(_POSTS_DATA_DIR_PATH, exist_ok=True)
 
     page = 1
     print("Info: Fetching page 0001 / ????...")

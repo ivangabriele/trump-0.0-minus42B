@@ -1,3 +1,4 @@
+import warnings
 from os import path
 from typing import Optional, Tuple
 from pydantic import BaseModel, ConfigDict
@@ -36,6 +37,20 @@ _CACHE: _Cache = _Cache(tokenizer=None, model=None)
 def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | GenerationMixin]:
     if _CACHE.tokenizer and _CACHE.model:
         return _CACHE.tokenizer, _CACHE.model
+
+    # Filter out specific torch warnings that can be safely ignored.
+    warnings.filterwarnings(
+        "ignore",
+        message=".*`generation_config` default values have been modified to match model-specific defaults.*",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=".*Not enough SMs to use max_autotune_gemm mode.*",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=".*does not support bfloat16 compilation natively.*",
+    )
 
     print("Info: Initializing LLM...")
     tokenizer = AutoTokenizer.from_pretrained(_LLM_MODEL)
@@ -105,7 +120,7 @@ def _get_cleaning_prompt(raw_text: str) -> str:
     return prompt
 
 
-def clean_post_text_with_llm(text: str) -> str:
+def clean_post_text_with_llm(text: str, attempt: int = 0) -> str:
     if not text or not text.strip():
         return ""
 
@@ -118,13 +133,21 @@ def clean_post_text_with_llm(text: str) -> str:
 
     inputs = tokenizer(formatted_prompt, return_tensors="pt").to(model.device)  # type: ignore[union-attr]
 
+    # generation_config = GenerationConfig(
+    #     do_sample=False,  # Disable sampling for determinism
+    #     num_beams=1,  # Greedy search
+    #     renormalize_logits=False,  # Unused when sampling is disabled
+    #     temperature=None,  # Unused when sampling is disabled
+    #     top_k=None,  # Unused when sampling is disabled
+    #     top_p=None,  # Unused when sampling is disabled
+    # )
     generation_config = GenerationConfig(
-        do_sample=False,  # Disable sampling for determinism
+        do_sample=True,
         num_beams=1,  # Greedy search
-        renormalize_logits=False,  # Unused when sampling is disabled
-        temperature=None,  # Unused when sampling is disabled
-        top_k=None,  # Unused when sampling is disabled
-        top_p=None,  # Unused when sampling is disabled
+        renormalize_logits=False,
+        temperature=min(0.7 + (attempt * 0.3), 1.5),
+        top_k=50,
+        top_p=0.9,
     )
     output_tokens = model.generate(**inputs, max_new_tokens=512, generation_config=generation_config)  # type: ignore[operator]
 
@@ -139,10 +162,10 @@ def clean_post_text_with_llm(text: str) -> str:
     # print("OUTPUT (BEFORE):")
     # print("-" * 120)
     # print(tokenizer.decode(output_tokens[0], skip_special_tokens=True))
-    print("=" * 120)
-    print("OUTPUT (AFTER):")
-    print("-" * 120)
-    print(output)
-    print("-" * 120)
+    # print("=" * 120)
+    # print("OUTPUT (AFTER):")
+    # print("-" * 120)
+    # print(output)
+    # print("-" * 120)
 
     return output

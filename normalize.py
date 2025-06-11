@@ -68,7 +68,7 @@ def clean_page(page: int, conn: sqlite3.Connection):
         print(f"┃ Raw date:\t{post.date}" + " " * (120 - 17 - len(post.date)) + "┃")
         print(f"┃ Clean Date:\t{post.date}" + " " * (120 - 20 - len(post.date)) + "┃")
         print("┠" + "─" * 118 + "┨")
-        utils.print_boxed_text(raw_text, 120)
+        utils.print_boxed_text(raw_text, 120, "┃")
         print("┠" + "─" * 118 + "┨")
         print(f"┃ {clean_text}")
         print("┗" + "━" * 118 + "┛")

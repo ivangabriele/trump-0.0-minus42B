@@ -14,15 +14,15 @@ Arguably the dumbest Large Language Model ever created.
 ## Table of Contents
 
 - [Why?](#why)
-- [Usage](#usage)
+- [Local Run \& Development](#local-run--development)
   - [Getting started](#getting-started)
   - [1. Download Trump's social media posts](#1-download-trumps-social-media-posts)
-  - [2. Prepare the Normalizer LLM](#2-prepare-the-normalizer-llm)
-  - [3. Normalize and generate the training data](#3-normalize-and-generate-the-training-data)
-  - [3. Train Trump model](#3-train-trump-model)
-    - [Fine-tune a pre-trained model](#fine-tune-a-pre-trained-model)
-    - [Train from scratch](#train-from-scratch)
-  - [Run model (CLI chat)](#run-model-cli-chat)
+  - [2. Build the Generator LLM](#2-build-the-generator-llm)
+  - [3. Generate the training data](#3-generate-the-training-data)
+  - [4. Train Trump model](#4-train-trump-model)
+    - [From a pre-trained model](#from-a-pre-trained-model)
+    - [From scratch](#from-scratch)
+  - [5. Run model (CLI chat)](#5-run-model-cli-chat)
 
 ---
 
@@ -30,13 +30,29 @@ Arguably the dumbest Large Language Model ever created.
 
 I needed a self-educational project to learn how to train an LLM from scratch and how to fine-tune pre-trained ones.
 
-## Usage
+**Topics:**
+
+- Datasets
+- Fine-tuning
+  - Transformers Trainer
+  - RLHF (Reinforcement Learning from Human Feedback)
+    1. Human Feedback
+    2. RM (Reward Model)
+    3. PPO (Proximal Policy Optimization)
+- Training
+
+## Local Run & Development
+
+> [!WARNING]  
+> There are more than 80,000 posts. This means that each step of the process will take a while to complete if you want to
+> reproduce or customize them instead of using the existing repository data.
 
 ### Getting started
 
 > [!IMPORTANT]  
 > **Prerequisites:**
 > - **Git LFS** (to download the `data/` directory)
+> - **huggingface-cli** (installed globally)
 > - **pyenv**
 > - **uv**
 
@@ -52,39 +68,45 @@ This script use Roll Call's (FactSquared) API to download [Trump's social media
 posts](https://rollcall.com/factbase-twitter/?platform=all&sort=date&sort_order=asc&page=1) — including deleted ones —
 and store them as JSON files — by lots of 50 posts — in the `data/posts/` directory. 
 
-> [!WARNING]  
-> There are more than 80,000 posts.
+Then it populates a local SQLite database under `data/posts.db` with the posts raw text and basic metadata, merging
+Twitter/X posts that are split into multiple tweets (e.g. threads), and filtering out the posts that are useless for
+training (e.g. images, videos, etc.).
 
 ```sh
 make data
 ```
 
-### 2. Prepare the Normalizer LLM
+### 2. Build the Generator LLM
 
-_Not ready yet!_
-
-### 3. Normalize and generate the training data
-
-_Not ready yet!_
-
-This script normalizes the posts content using the RLHF fine-tuned local "normalizer" LLM with few-shot prompting.
-
-It then stores the normalized posts in the local SQLite database `posts.db`.
-
-> [!WARNING]  
-> There are more than 80,000 posts. 
+This script generates a full RLHF (reinforcement learning from human feedback) by prompting you to select or provide the
+best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot prompt living
+in `normalize_prompt.json`.
 
 ```sh
-make normalize
+make prepare
 ```
 
-### 3. Train Trump model
+### 3. Generate the training data
+
+_Not ready yet!_
+
+This script normalizes the posts using the fine-tuned Generator LLM.
+
+It then update the local SQLite database `data/posts.db` with the normalized text which will be used to train the final
+Trump model.
+
+
+```sh
+make generate
+```
+
+### 4. Train Trump model
 
 You have 2 choices here:
 - Either fine-tune a pre-trained model, by default `facebook/opt-125m`.
 - Or train the model from scratch, which will give you the worst results (but the most fun!).
 
-#### Fine-tune a pre-trained model
+#### From a pre-trained model
 
 Using the default `facebook/opt-125m` model:
 
@@ -100,7 +122,7 @@ _Not ready yet!_
 make tune MODEL=facebook/opt-350m
 ```
 
-#### Train from scratch
+#### From scratch
 
 _Not ready yet!_
 
@@ -108,7 +130,7 @@ _Not ready yet!_
 make train
 ```
 
-### Run model (CLI chat)
+### 5. Run model (CLI chat)
 
 Starts a CLI chat with the model.
 

@@ -195,7 +195,7 @@ class SocialForTruthSocial(BaseModel):
     media_filenames: List[str | int]
     media_filesizes: List[int]
     media_urls: List[str]
-    post_html: Optional[str]
+    post_html: Optional[str] = None
     post_text: Optional[str]
     quote_flag: bool
     repost_count: Optional[int]

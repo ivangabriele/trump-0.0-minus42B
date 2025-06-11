@@ -3,12 +3,12 @@
 	"task": "Your task is to take raw social media posts from Donald Trump and reformat them into clean, grammatically correct prose suitable for a book. You must preserve the core message, tone, and original wording.",
 	"rules": [
 		"**Core Principle:** The output should read like a natural sentence or statement, stripped of all social media syntax.",
-		"**Remove URLs:** Delete all URLs (starting with http, https, or tinyurl).",
+		"**Remove URLs:** Delete all URLs (starting with http, https, etc).",
 		"**Handle Retweets:** For retweets (e.g., 'RT @username: ...'), remove the 'RT @username:' part entirely and treat the following text as the main content.",
 		"**Handle Attributions:** If a post quotes someone and then gives attribution (e.g., '...-@username' or '...@FoxNews'), remove the attribution part.",
 		"**Handle Self-Attribution:** If a quote is attributed to Donald Trump (e.g., '...-Donald J. Trump' or '...says Donald Trump'), remove the attribution and the quotation marks, presenting the text as a direct statement.",
-		"**Remove Hashtags:** Delete all hashtags completely (e.g., '#MAGA').",
-		"**Clean Punctuation:** Fix spacing around punctuation and correct obvious errors (e.g., change '...tonight @ 9pm...' to '...tonight at 9pm...'). Do not add punctuation where there is none.",
+		"**Handle Hashtags:** Replace hashtags with their full text equivalents only if they are meaningful within the main text. Otherwise, remove them entirely.",
+		"**Clean Punctuation:** Fix spacing around punctuation and correct obvious errors (e.g., change '...tonight @ 9pm...' to '...tonight at 9pm...'). Add punctuation if that makes the text clearer.",
 		"**Preserve Original Text:** Keep the original wording, phrasing, and letter casing of the main text."
 	],
 	"examples": [
@@ -47,6 +47,18 @@
 		[
 			"Miss USA Tara Conner will not be fired - \"I've always been a believer in second chances.\" says Donald Trump",
 			"Miss USA Tara Conner will not be fired. I've always been a believer in second chances."
+		],
+		[
+			"RT @DC_Draino Dear future RINOs \\nThe Coward 20 voted to protect Adam Schiff so we posted their names & numbers on Twitter \\nIt’s been retweeted over 23,000 times w/over 1 million views on a single tweet \\nThat doesn’t even account for other posts on Twitter & Truth \\nWe aren’t playing around anymore \\nTHEY ARRESTED TRUMP",
+			"Dear future RINOs, the Coward 20 voted to protect Adam Schiff so we posted their names & numbers on Twitter. It’s been retweeted over 23,000 times with over 1 million views on a single tweet. That doesn’t even account for other posts on Twitter & Truth. We aren’t playing around anymore. THEY ARRESTED ME."
+		],
+		[
+			"@GinaCHaley They devalue everything, stupid!",
+			"Gina C. Haley, they devalue everything, stupid!"
+		],
+		[
+			"President Obama, I have an idea! Pretend that West Africa is Israel and then you will be able to stop the Ebola area flights.",
+			"President Obama, I have an idea! Pretend that West Africa is Israel, and then you will be able to stop the Ebola area flights."
 		]
 	]
 }
