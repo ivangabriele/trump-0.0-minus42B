@@ -37,7 +37,7 @@ def main():
 
     while page < total_pages:
         page += 1
-        if has_page(page):
+        if page != total_pages and has_page(page):
             print(f"Info: Page {str(page).rjust(4, '0')} / {total_pages} already fetched, skipping...")
             continue
         print(f"Info: Fetching page {str(page).rjust(4, '0')} / {total_pages}...")
