@@ -154,7 +154,7 @@ def _insert_posts(database_posts: List[DatabasePost]) -> None:
     db_connection.commit()
     cursor.executemany(
         """
-        INSERT INTO posts (id, date, raw_text)
+        INSERT OR IGNORE INTO posts (id, date, raw_text)
         VALUES (?, ?, ?)
         """,
         [(database_post.id, database_post.date, database_post.raw_text) for database_post in database_posts],
