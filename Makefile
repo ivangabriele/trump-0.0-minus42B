@@ -17,3 +17,9 @@ chat:
 
 test:
 	.venv/bin/pytest -vv
+
+type:
+	.venv/bin/mypy .
+
+lint:
+	.venv/bin/ruff check .
