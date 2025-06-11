@@ -3,20 +3,11 @@ from typing import List
 from pydantic import BaseModel
 
 
-class PreferenceDatasetStfPair(BaseModel):
-    """
-    A single pair of input and output for SFT (Supervised Fine-Tuning).
-    """
-
-    id: str
-    "Unique post hash."
-    input: str
-    output: str
-
-
 class PreferenceDatasetComparisonPair(BaseModel):
     """
     A single pair of inputs for comparison in RM (Reward Modeling).
+
+    Can also be used for SFT (Supervised Fine-Tuning) with `input` and `accepted`.
     """
 
     id: str
@@ -27,7 +18,6 @@ class PreferenceDatasetComparisonPair(BaseModel):
 
 
 class PreferenceDataset(BaseModel):
-    sft_pairs: List[PreferenceDatasetStfPair]
-    "For SFT (Supervised Fine-Tuning)."
+    """The RLHF (Reinforcement Learning from Human Feedback) preference dataset."""
+
     comparison_pairs: List[PreferenceDatasetComparisonPair]
-    "For RM (Reward Modeling)."

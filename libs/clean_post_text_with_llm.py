@@ -10,7 +10,7 @@ from transformers.generation.utils import GenerationMixin
 from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
-from constants import GENERATOR_LLM_MODEL, GENERATOR_PROMPT_CONFIG_PATH
+from constants import GENERATOR_MODEL, GENERATOR_PROMPT_CONFIG_PATH
 
 
 class _Cache(BaseModel):
@@ -49,11 +49,11 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     )
 
     print("Info: Initializing LLM...")
-    tokenizer = AutoTokenizer.from_pretrained(GENERATOR_LLM_MODEL)
+    tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL)
     assert isinstance(tokenizer, PreTrainedTokenizerBase), "`tokenizer` should be of type `PreTrainedTokenizerBase`."
     # The `device_map="auto"` will intelligently use the GPU if available.
     # Using bfloat16 for a smaller memory footprint.
-    model = AutoModelForCausalLM.from_pretrained(GENERATOR_LLM_MODEL, device_map="auto", torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL, device_map="auto", torch_dtype=torch.bfloat16)
     assert isinstance(model, GenerationMixin), "`model` should be of type `GenerationMixin`."
     assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
 
@@ -66,7 +66,7 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     #     "<|start_header_id|>assistant<|end_header_id|>\n\n"
     # )
 
-    _config = AutoConfig.from_pretrained(GENERATOR_LLM_MODEL)
+    _config = AutoConfig.from_pretrained(GENERATOR_MODEL)
     # print("=" * 120)
     # print("CONFIGURATION:")
     # print("-" * 120)
