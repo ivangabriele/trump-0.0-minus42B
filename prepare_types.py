@@ -3,14 +3,22 @@ from typing import List
 from pydantic import BaseModel
 
 
-class FeedbackDataStfPair(BaseModel):
+class PreferenceDatasetStfPair(BaseModel):
+    """
+    A single pair of input and output for SFT (Supervised Fine-Tuning).
+    """
+
     id: str
     "Unique post hash."
     input: str
     output: str
 
 
-class FeedbackDataComparisonPair(BaseModel):
+class PreferenceDatasetComparisonPair(BaseModel):
+    """
+    A single pair of inputs for comparison in RM (Reward Modeling).
+    """
+
     id: str
     "Unique post hash."
     input: str
@@ -18,8 +26,8 @@ class FeedbackDataComparisonPair(BaseModel):
     rejected: List[str]
 
 
-class FeedbackData(BaseModel):
-    sft_pairs: List[FeedbackDataStfPair]
-    "For supervised fine-tuning."
-    comparison_pairs: List[FeedbackDataComparisonPair]
-    "For reward modeling."
+class PreferenceDataset(BaseModel):
+    sft_pairs: List[PreferenceDatasetStfPair]
+    "For SFT (Supervised Fine-Tuning)."
+    comparison_pairs: List[PreferenceDatasetComparisonPair]
+    "For RM (Reward Modeling)."

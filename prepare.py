@@ -1,41 +1,34 @@
 import json
 from os import path
-from pathlib import Path
 from typing import List, Optional, Tuple
 import random
 
-from pydantic import ValidationError
-from download_types import ResponseBody, JsonPost
+from constants import PREFERENCE_DATASET_PATH
+from database_types import DatabasePost
 import libs
-from prepare_types import FeedbackData, FeedbackDataComparisonPair, FeedbackDataStfPair
+from prepare_types import PreferenceDataset, PreferenceDatasetComparisonPair, PreferenceDatasetStfPair
 import utils
 
 # Configuration
-_POSTS_DATA_DIR_PATH = "data/posts"
-_RLHF_DATA_DIR_PATH = "data/rlhf"
 _SAMPLE_SIZE = 10
 _MAX_ATTEMPTS = 3
 
 
-def load_posts() -> List[JsonPost]:
-    posts: List[JsonPost] = []
-    for json_file in Path(_POSTS_DATA_DIR_PATH).glob("*.json"):
-        with open(json_file, "r") as f:
-            try:
-                data = ResponseBody.model_validate_json(f.read())
-            except ValidationError as e:
-                print(f"Error: Invalid JSON format in file `{json_file}`.")
-                print(repr(e.errors()[0]))
-                continue
-            posts.extend(data.data)
+def _load_posts() -> List[DatabasePost]:
+    db_connection = libs.initialize_database()
 
-    return posts
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT * FROM posts")
+
+    rows = cursor.fetchall()
+
+    cursor.close()
+    db_connection.close()
+
+    return [DatabasePost.model_validate(row) for row in rows]
 
 
-def collect_feedback(post: JsonPost, sample_index: int) -> Optional[Tuple[str, List[str]]]:
-    if not post.text:
-        return None
-
+def _collect_human_feedback(post: DatabasePost, sample_index: int) -> Optional[Tuple[str, List[str]]]:
     rejected_texts: List[str] = []
 
     print("")
@@ -44,17 +37,17 @@ def collect_feedback(post: JsonPost, sample_index: int) -> Optional[Tuple[str, L
         f"POST {str(sample_index + 1).rjust(len(str(_SAMPLE_SIZE)), '0')} / {_SAMPLE_SIZE}", 120, "║"
     )
     print("╟" + "─" * 118 + "╢")
-    utils.print_boxed_text(f"Date:     {post.date}", 120, "║")
-    utils.print_boxed_text(f"Platform: {post.platform}", 120, "║")
+    utils.print_boxed_text(f"ID:   {post.id}", 120, "║")
+    utils.print_boxed_text(f"Date: {post.date}", 120, "║")
     print("╟" + "─" * 118 + "╢")
-    utils.print_boxed_text(post.text, 120, "║")
+    utils.print_boxed_text(post.raw_text, 120, "║")
     print("╚" + "═" * 118 + "╝")
 
     for attempt in range(_MAX_ATTEMPTS):
-        if not post.text:
+        if not post.raw_text:
             return None
 
-        proposed_text = libs.clean_post_text_with_llm(post.text, attempt=attempt)
+        proposed_text = libs.clean_post_text_with_llm(post.raw_text, attempt=attempt)
         print("")
         print("┏" + "━" * 118 + "┓")
         utils.print_boxed_text(f"PROPOSAL {attempt + 1}", 120, "┃")
@@ -90,43 +83,62 @@ def collect_feedback(post: JsonPost, sample_index: int) -> Optional[Tuple[str, L
     return expected_text, rejected_texts
 
 
-def save_rlhf_data(feedback_data: FeedbackData, batch_page: int):
-    output_path = path.join(path.dirname(__file__), _RLHF_DATA_DIR_PATH, f"batch_{str(batch_page).rjust(4, '0')}.json")
+def _load_preference_dataset() -> PreferenceDataset:
+    preference_dataset_path = path.join(path.dirname(__file__), PREFERENCE_DATASET_PATH)
 
-    with open(output_path, "w") as file:
+    if not path.exists(preference_dataset_path):
+        print(f"Warning: Preference Dataset file `{preference_dataset_path}` does not exist.")
+
+        return PreferenceDataset(sft_pairs=[], comparison_pairs=[])
+
+    with open(preference_dataset_path, "r") as file:
+        data = json.load(file)
+
+    return PreferenceDataset.model_validate(data)
+
+
+def _save_preference_dataset(feedback_data: PreferenceDataset, batch_page: int):
+    preference_dataset_path = path.join(path.dirname(__file__), PREFERENCE_DATASET_PATH)
+
+    with open(preference_dataset_path, "w") as file:
         json.dump(feedback_data, file, indent=2)
 
-    print(f"Info: RLHF data saved to `{output_path}`.")
+    print("")
+    print(f"Info: Preference Dataset saved to `{preference_dataset_path}`.")
 
 
 def main():
-    all_posts = load_posts()
-    sampled_posts = random.sample(all_posts, _SAMPLE_SIZE)
+    preference_dataset = _load_preference_dataset()
+    print(
+        f"Info: Loaded the existing Preference Dataset with {len(preference_dataset.sft_pairs)} SFT pairs and {len(preference_dataset.comparison_pairs)} comparison pairs."
+    )
+    preference_dataset_ids = map(lambda x: x.id, preference_dataset.comparison_pairs)
+
+    all_posts = _load_posts()
+    filtered_posts = [post for post in all_posts if post.id not in preference_dataset_ids]
+    sampled_posts = random.sample(filtered_posts, _SAMPLE_SIZE)
     print(f"Info: Loaded a ramdom sample of {len(sampled_posts)} posts.")
 
-    feedback_data = FeedbackData(sft_pairs=[], comparison_pairs=[])
     for sample_index, post in enumerate(sampled_posts):
-        if not post.text:
-            continue
-
-        result = collect_feedback(post, sample_index)
+        result = _collect_human_feedback(post, sample_index)
         if result is None:
             continue
 
         accepted_text, rejected_texts = result
-        post_id = utils.generate_post_id(post.date, post.text)
+        post_id = utils.generate_post_id(post.date, post.raw_text)
         if accepted_text:
-            feedback_data.sft_pairs.append(FeedbackDataStfPair(id=post_id, input=post.text, output=accepted_text))
+            preference_dataset.sft_pairs.append(
+                PreferenceDatasetStfPair(id=post_id, input=post.raw_text, output=accepted_text)
+            )
 
             if rejected_texts:
-                feedback_data.comparison_pairs.append(
-                    FeedbackDataComparisonPair(
-                        id=post_id, input=post.text, accepted=accepted_text, rejected=rejected_texts
+                preference_dataset.comparison_pairs.append(
+                    PreferenceDatasetComparisonPair(
+                        id=post_id, input=post.raw_text, accepted=accepted_text, rejected=rejected_texts
                     )
                 )
 
-    print("")
-    save_rlhf_data(feedback_data, batch_page=1)
+    _save_preference_dataset(preference_dataset, batch_page=1)
 
 
 if __name__ == "__main__":

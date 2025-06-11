@@ -6,4 +6,6 @@ GENERATOR_LLM_MODEL = "google/gemma-3-1b-it"
 GENERATOR_PROMPT_CONFIG_PATH = "generator_prompt.json"
 
 POSTS_DATA_DIR_PATH = "data/posts"
+# Human (Feedback) Preference Dataset
+PREFERENCE_DATASET_PATH = "data/preference.json"
 SQLITE_DB_FILE_PATH = "data/posts.db"
