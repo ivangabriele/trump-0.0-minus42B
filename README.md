@@ -83,6 +83,9 @@ This script generates a human preference (feedback) dataset (`data/preference.js
 provide the best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot
 prompt living in `generator_prompt.json`.
 
+As a human, you're asked to select the best normalized output for each post, or provide your own if none is
+satisfactory. You can also skip posts if they're not relevant and should be filtered out.
+
 ```sh
 python teach.py <SAMPLE_SIZE>
 ```
