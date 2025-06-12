@@ -26,6 +26,8 @@ ENV PATH="/home/user/.local/bin:$PATH"
 RUN curl -fsSL https://pyenv.run | bash
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-COPY --link . /app
+COPY . /app
+
+RUN ls -la /app
 
 RUN uv sync
