@@ -1,79 +1,37 @@
-import json
-from os import path
-import sqlite3
-from pathlib import Path
-
-from pydantic import ValidationError
-
-from constants import POSTS_DATA_DIR_PATH
-from _types.json_data_types import ResponseBody
-import libs
+from _types.database_types import DatabasePost
+from libs import database
+from libs import clean_post_text_with_llm
 import utils
 
 
-def clean_page(page: int, conn: sqlite3.Connection):
-    data_file_path = path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH, str(page).rjust(4, "0") + ".json")
-
+def _clean_post(database_post: DatabasePost, index: int, total: int) -> DatabasePost:
     print("\n╔" + "═" * 118 + "╗")
-    print(f"║ {str(page).rjust(4, '0')}" + " " * (120 - 7) + "║")
+    utils.print_boxed_text(f"{str(index + 1).rjust(len(str(total)), '0')} / total", 120, "║")
     print("╚" + "═" * 118 + "╝")
 
-    try:
-        with open(data_file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            response_body = ResponseBody.model_validate(data)
-    except (json.JSONDecodeError, ValidationError) as e:
-        utils.print_error_and_exit(f"Error processing `{data_file_path}`.", e)
-        return
+    clean_text = clean_post_text_with_llm(database_post.raw_text)
 
-    cursor = conn.cursor()
-    posts_to_insert = []
-    for post in response_body.data:
-        raw_text = post.text if post.text is not None else ""
-        if not raw_text.strip():
-            continue
+    print("\n┏" + "━" * 118 + "┓")
+    utils.print_boxed_text(f"ID:   {database_post.id}", 120, "┃")
+    utils.print_boxed_text(f"Date: {database_post.date}", 120, "┃")
+    print("┠" + "─" * 118 + "┨")
+    utils.print_boxed_text(database_post.raw_text, 120, "┃")
+    print("┠" + "─" * 118 + "┨")
+    utils.print_boxed_text(clean_text, 120, "┃")
+    print("┗" + "━" * 118 + "┛")
 
-        post_id = utils.generate_post_id(post.date, raw_text)
-        cursor.execute("SELECT id FROM posts WHERE id = ?", (post_id,))
-        if cursor.fetchone():
-            continue
-
-        clean_text = libs.clean_post_text_with_llm(raw_text)
-
-        print("\n┏" + "━" * 118 + "┓")
-        print(f"┃ ID:\t\t{post_id}" + " " * 39 + "┃")
-        print(f"┃ Raw date:\t{post.date}" + " " * (120 - 17 - len(post.date)) + "┃")
-        print(f"┃ Clean Date:\t{post.date}" + " " * (120 - 20 - len(post.date)) + "┃")
-        print("┠" + "─" * 118 + "┨")
-        utils.print_boxed_text(raw_text, 120, "┃")
-        print("┠" + "─" * 118 + "┨")
-        print(f"┃ {clean_text}")
-        print("┗" + "━" * 118 + "┛")
-
-        posts_to_insert.append((post_id, post.date, raw_text, clean_text))
-
-    # if posts_to_insert:
-    #     cursor.executemany(
-    #         "INSERT INTO posts (id, date, raw_text, clean_text) VALUES (?, ?, ?)",
-    #         posts_to_insert
-    #     )
-    #     conn.commit()
-    #     print(f"  > Inserted {len(posts_to_insert)} new posts.")
+    return DatabasePost(
+        id=database_post.id, date=database_post.date, raw_text=database_post.raw_text, clean_text=clean_text
+    )
 
 
 def main():
     print("Info: Initializing database...")
-    db_connection = libs.initialize_database()
 
-    page = 0
-    total_pages = len(list(Path(path.join(path.dirname(__file__), POSTS_DATA_DIR_PATH)).glob("*.json")))
-    print(f"Info: Found {total_pages} pages.")
-    while page < total_pages:
-        page += 1
-
-        clean_page(page, db_connection)
-
-    db_connection.close()
+    database_posts = database.get_posts()
+    total = len(database_posts)
+    for index, database_post in enumerate(database_posts):
+        _clean_post(database_post, index, total)
 
 
 if __name__ == "__main__":
