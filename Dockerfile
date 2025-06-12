@@ -22,9 +22,7 @@ RUN curl -fsSL https://pyenv.run | bash
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 WORKDIR /app
-
+COPY --link . /app
 RUN chown user /app
-
-COPY --chown=user --link . /app
 
 RUN uv sync
