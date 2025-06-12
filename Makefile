@@ -5,7 +5,7 @@ download:
 teach:
 	@echo "Error: Please run this script manually: \`python ./teach.py <SAMPLE_SIZE>\`."
 prepare:
-	.venv/bin/python ./prepare.py
+	TORCHDYNAMO_DISABLE=1 .venv/bin/python ./prepare.py
 generate:
 	.venv/bin/python ./generate.py
 tune:

@@ -40,6 +40,8 @@ I needed a self-educational project to learn how to train an LLM from scratch an
     1. Human Feedback
     2. RM (Reward Model)
     3. PPO (Proximal Policy Optimization)
+  - PFT (Pre-trained Fine-Tuning)
+    - LoRA (Low-Rank Adaptation)
 - Training (from scratch)
 
 ## Local Run & Development

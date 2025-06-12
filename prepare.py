@@ -1,23 +1,21 @@
-import warnings
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-from constants import GENERATOR_MODEL, GENERATOR_MODEL_DIR_PATH, REWARD_MODEL, REWARD_MODEL_DIR_PATH
-
-
-import tqdm  # type: ignore
+from peft import LoraConfig
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
-from transformers import AutoModelForSequenceClassification
 from transformers.generation.configuration_utils import GenerationConfig
 from trl import (  # type: ignore
+    AutoModelForCausalLMWithValueHead,
     PPOTrainer,
     PPOConfig,
     RewardTrainer,
     RewardConfig,
 )
-from datasets import Dataset  # type: ignore
+import warnings
+
 from _types.generator_types import PreferenceDataset
-from peft import LoraConfig
+from constants import GENERATOR_MODEL, GENERATOR_MODEL_DIR_PATH, REWARD_MODEL, REWARD_MODEL_DIR_PATH
+from datasets import Dataset  # type: ignore
 from libs import preference_dataset_manager
+
 
 BATCH_SIZE = 4
 NUM_EPOCHS = 3
@@ -58,14 +56,14 @@ def _train_reward_model():
 
     # https://huggingface.co/docs/trl/v0.18.1/reward_trainer#trl.RewardConfig
     training_args = RewardConfig(
-        output_dir=REWARD_MODEL_DIR_PATH,
-        per_device_train_batch_size=BATCH_SIZE,
-        num_train_epochs=NUM_EPOCHS,
+        eval_strategy="no",
         learning_rate=LEARNING_RATE,
         logging_steps=10,
-        eval_strategy="no",
-        save_strategy="epoch",
+        num_train_epochs=NUM_EPOCHS,
+        output_dir=REWARD_MODEL_DIR_PATH,
+        per_device_train_batch_size=BATCH_SIZE,
         remove_unused_columns=False,
+        save_strategy="epoch",
     )
     trainer = RewardTrainer(
         model=model, args=training_args, processing_class=tokenizer, train_dataset=reward_model_dataset
@@ -102,19 +100,17 @@ def _train_with_ppo(reward_model, reward_tokenizer):
 
     generation_config = GenerationConfig.from_pretrained(GENERATOR_MODEL)
     generation_config.pad_token_id = tokenizer.pad_token_id
-    model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL, torch_dtype=torch.bfloat16, device_map="auto")
+    model = AutoModelForCausalLMWithValueHead.from_pretrained(
+        GENERATOR_MODEL, attn_implementation="eager", torch_dtype=torch.bfloat16, device_map="auto"
+    )
     model.generation_config = generation_config
-    model.base_model_prefix = "model"
+    model.base_model_prefix = "pretrained_model"
 
-    # ref_model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL, torch_dtype=torch.bfloat16, device_map="auto")
-
-    ppo_config = PPOConfig(
-        reward_model_path=GENERATOR_MODEL,
-        batch_size=BATCH_SIZE,
-        mini_batch_size=1,
-        num_ppo_epochs=4,  # `4` is the default value
+    ref_model = AutoModelForCausalLMWithValueHead.from_pretrained(
+        GENERATOR_MODEL, attn_implementation="eager", torch_dtype=torch.bfloat16, device_map="auto"
     )
 
+    # Configure LoRA (Low-Rank Adaptation) PEFT (Parameter-Efficient Fine-Tuning)
     lora_config = LoraConfig(
         r=16,
         lora_alpha=32,
@@ -123,11 +119,18 @@ def _train_with_ppo(reward_model, reward_tokenizer):
         task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
     )
-
+    ppo_config = PPOConfig(
+        batch_size=BATCH_SIZE,
+        # gradient_accumulation_steps=4,
+        learning_rate=LEARNING_RATE,
+        mini_batch_size=1,
+        # per_device_train_batch_size=1,
+        reward_model_path=GENERATOR_MODEL,
+    )
     ppo_trainer = PPOTrainer(
         args=ppo_config,
         model=model,
-        ref_model=None,
+        ref_model=ref_model,
         reward_model=reward_model,
         value_model=model,
         processing_class=tokenizer,
@@ -135,50 +138,14 @@ def _train_with_ppo(reward_model, reward_tokenizer):
         peft_config=lora_config,
     )
 
-    generation_kwargs = {
-        "max_new_tokens": 512,
-        "top_k": 0.0,
-        "top_p": 1.0,
-        "do_sample": True,
-        "pad_token_id": tokenizer.eos_token_id,
-        "remove_invalid_values": True,
-    }
-
-    for epoch in range(ppo_config.num_ppo_epochs):
-        for batch in tqdm.tqdm(ppo_trainer.dataloader):
-            query_tensors = batch["input_ids"]
-
-            # 1. Access the generative model via `ppo_trainer.model.policy`.
-            # 2. Call `.generate()` on this object.
-            full_response_tensors = ppo_trainer.model.policy.generate(input_ids=query_tensors, **generation_kwargs)
-
-            # 3. Slice the response to remove the prompt.
-            response_tensors = full_response_tensors[:, query_tensors.shape[1] :]
-            batch["response"] = tokenizer.batch_decode(response_tensors, skip_special_tokens=True)
-
-            # --- The rest of the loop remains the same ---
-
-            # 4. Decode the original query for reward calculation.
-            queries = tokenizer.batch_decode(query_tensors, skip_special_tokens=True)
-
-            # 5. Compute reward.
-            texts = [query + response for query, response in zip(queries, batch["response"])]
-            reward_inputs = reward_tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(
-                ppo_trainer.accelerator.device
-            )
-
-            with torch.no_grad():
-                rewards = reward_model(**reward_inputs).logits
-
-            # 6. Perform PPO step.
-            stats = ppo_trainer.step(query_tensors, response_tensors, [reward[0] for reward in rewards])
-            ppo_trainer.log_stats(stats, batch, [r[0] for r in rewards])
+    print("Info: Starting PPO training...")
+    ppo_trainer.train()
 
     print("Info: PPO training finished. Saving model...")
     ppo_trainer.save_model(GENERATOR_MODEL_DIR_PATH)
-
-    print("Info: Tokenizer saving...")
     tokenizer.save_pretrained(GENERATOR_MODEL_DIR_PATH)
+
+    print(f"Info: Training complete. Generator model saved to `{GENERATOR_MODEL_DIR_PATH}`.")
 
 
 def main():
