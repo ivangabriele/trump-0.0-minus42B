@@ -18,11 +18,12 @@ RUN curl -fsSL https://pyenv.run | bash
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
 
 WORKDIR /app
 COPY --link . /app
 RUN chown user /app
+
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
 
 RUN uv sync
