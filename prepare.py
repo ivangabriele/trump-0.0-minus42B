@@ -154,6 +154,10 @@ def main():
         "ignore",
         message=".*does not support bfloat16 compilation natively.*",
     )
+    warnings.filterwarnings(
+        "ignore",
+        message=".*'pin_memory' argument is set as true but no accelerator is found.*",
+    )
 
     reward_model, reward_tokenizer = _train_reward_model()
     _train_with_ppo(reward_model, reward_tokenizer)
