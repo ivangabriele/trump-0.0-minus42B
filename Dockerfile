@@ -19,6 +19,7 @@ RUN useradd -m -u 1000 user
 
 WORKDIR /app
 RUN chown user /app
+RUN chmod 755 /app
 
 USER user
 ENV PATH="/home/user/.local/bin:$PATH"
