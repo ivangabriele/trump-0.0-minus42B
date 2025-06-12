@@ -33,4 +33,6 @@ RUN ls -la /app
 
 RUN uv sync
 
-CMD ["python", "-m", "http.server", "--directory", "public"]
+# `7860` is the default port for Hugging Face Spaces running on Docker
+# https://huggingface.co/docs/hub/en/spaces-config-reference
+CMD ["python", "-m", "http.server", "--directory", "public", "7860"]
