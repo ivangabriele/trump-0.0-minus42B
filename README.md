@@ -1,3 +1,14 @@
+---
+title: Trump 0.0 Minus42B Workspace
+emoji: 🚀
+colorFrom: green
+colorTo: red
+sdk: docker
+pinned: false
+license: mit
+short_description: A really dumb and opinionated LLM (Workspace).
+---
+
 # Trump-0.0-minus42B — The Trump LLM
 
 **A really dumb and opinionated LLM — exclusively trained on Donald J. Trump's social media posts[^note].**
