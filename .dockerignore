@@ -180,10 +180,3 @@ pyrightconfig.json
 
 # SQLite database file
 /posts.db
-
-################################################################################
-# Docker
-
-.dockerignore
-docker-compose.yml
-Dockerfile
