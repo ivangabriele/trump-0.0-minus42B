@@ -15,7 +15,6 @@ def generate_response(model, tokenizer, input_text, max_length=50):
 
 
 def main():
-    # Load the trained model and tokenizer from checkpoint
     checkpoint_path = path.join(path.dirname(__file__), _CHECKPOINT_PATH)
     print(f"Loading model from {checkpoint_path}...")
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)

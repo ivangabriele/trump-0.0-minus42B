@@ -1,11 +1,11 @@
-.PHONY: download teach prepare generate tune train chat test
+.PHONY: download teach prepare generate tune train chat test type lint
 
 download:
 	.venv/bin/python ./download.py
 teach:
 	@echo "Error: Please run this script manually: \`python ./teach.py <SAMPLE_SIZE>\`."
 prepare:
-	@echo "Error: Not implemented yet.."
+	.venv/bin/python ./prepare.py
 generate:
 	.venv/bin/python ./generate.py
 tune:

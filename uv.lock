@@ -709,6 +709,27 @@ wheels = [
 ]
 
 [[package]]
+name = "peft"
+version = "0.15.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/65/faa18cd8ffbe0f742c3f2559770646cce2574b9cd28a2a05e8d36f64e968/peft-0.15.2.tar.gz", hash = "sha256:7059029f4d42a092ded1aa117dd366a46084aef638bdd593f6ab0195d5427fcd", size = 472952, upload-time = "2025-04-15T15:27:53.09Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/85/8e6ea3d1089f2b6de3c1cd34bbbd7560912af9d34b057be3b8b8fefe1da3/peft-0.15.2-py3-none-any.whl", hash = "sha256:0dfc942b03b7af4b7267cd4e30b15e3a4a1d277adc581ce6245fc13f1f93d0a0", size = 411051, upload-time = "2025-04-15T15:27:50.799Z" },
+]
+
+[[package]]
 name = "pendulum"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1251,6 +1272,20 @@ wheels = [
 ]
 
 [[package]]
+name = "trl"
+version = "0.18.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "datasets" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/77/c8bcabf903a4493823e33e55d45081db49396cee51cc507e734acd9dfae0/trl-0.18.1.tar.gz", hash = "sha256:4d6acaa9462e857f97730b0af3ae207604a0f6bf6d1181b04fe0ce32d553d9f3", size = 383923, upload-time = "2025-05-29T19:58:48.195Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/c3/d7f45cc0078d789558bd6601f246ae83d85ce95ceb01320569360cfe943d/trl-0.18.1-py3-none-any.whl", hash = "sha256:3a577a59674d8ff22b6990ff2a8aed9979936b30f693f8cfe321dabbbbe3f2b9", size = 366319, upload-time = "2025-05-29T19:58:46.36Z" },
+]
+
+[[package]]
 name = "trump-0-0-minus42b"
 version = "0.0.0"
 source = { virtual = "." }
@@ -1258,11 +1293,15 @@ dependencies = [
     { name = "accelerate" },
     { name = "datasets" },
     { name = "nltk" },
+    { name = "numpy" },
+    { name = "peft" },
     { name = "pendulum" },
     { name = "protobuf" },
     { name = "selenium" },
     { name = "torch" },
+    { name = "tqdm" },
     { name = "transformers" },
+    { name = "trl" },
     { name = "validators" },
 ]
 
@@ -1281,11 +1320,15 @@ requires-dist = [
     { name = "accelerate", specifier = ">=0.26.0" },
     { name = "datasets", specifier = "==3.6.0" },
     { name = "nltk", specifier = "==3.9.1" },
+    { name = "numpy", specifier = "==2.3.0" },
+    { name = "peft", specifier = "==0.15.2" },
     { name = "pendulum", specifier = "==3.1.0" },
     { name = "protobuf", specifier = "==6.31.1" },
     { name = "selenium", specifier = "==4.33.0" },
     { name = "torch", specifier = "==2.7.1" },
+    { name = "tqdm", specifier = "==4.67.1" },
     { name = "transformers", specifier = "==4.52.4" },
+    { name = "trl", specifier = "==0.18.1" },
     { name = "validators", specifier = "==0.35.0" },
 ]
 

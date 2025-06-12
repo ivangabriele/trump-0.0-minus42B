@@ -9,11 +9,15 @@ dependencies = [
   "accelerate>=0.26.0",
   "datasets==3.6.0",
   "nltk==3.9.1",
+  "numpy==2.3.0",
+  "peft==0.15.2",
   "pendulum==3.1.0",
   "protobuf==6.31.1",
   "selenium==4.33.0",
   "torch==2.7.1",
+  "tqdm==4.67.1",
   "transformers==4.52.4",
+  "trl==0.18.1",
   "validators==0.35.0",
 ]
 

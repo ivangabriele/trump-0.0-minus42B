@@ -1,9 +1,12 @@
 DOWNLOAD_API_URL = "https://api.factsquared.com/json/factba.se-trump-social.php"
 
-GENERATOR_LLM_MODEL = "google/gemma-3-1b-it"
+GENERATOR_MODEL = "google/gemma-3-1b-it"
+GENERATOR_MODEL_DIR_PATH = "models/generator"
 # GENERATOR_LLM_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
 # GENERATOR_LLM_MODEL = "QuantFactory/DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF"
 GENERATOR_PROMPT_CONFIG_PATH = "generator_prompt.json"
+REWARD_MODEL = "distilbert/distilbert-base-uncased"
+REWARD_MODEL_DIR_PATH = "models/reward"
 
 POSTS_DATA_DIR_PATH = "data/posts"
 # Human (Feedback) Preference Dataset

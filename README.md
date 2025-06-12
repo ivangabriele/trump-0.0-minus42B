@@ -131,7 +131,7 @@ RT @MTG: The Gulf of America!
 
 ### 3. Prepare the Generator LLM
 
-_Not ready yet!_
+_In progress: working on PPO._
 
 This script builds the Generator LLM by fine-tuning a pre-trained model using the previously generated human preference
 and apllying RLHF techniques, such as RM and PPO, to optimize the Generator LLM for post text normalization.
