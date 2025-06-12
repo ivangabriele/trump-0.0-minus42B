@@ -33,4 +33,4 @@ RUN ls -la /app
 
 RUN uv sync
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python", "-m", "http.server", "--directory", "public"]
