@@ -14,16 +14,17 @@ RUN apt-get install -y \
   vim \
   wget
 RUN rm -fr /var/lib/apt/lists/*
-RUN curl -fsSL https://pyenv.run | bash
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 RUN useradd -m -u 1000 user
 
 WORKDIR /app
-COPY --link . /app
 RUN chown user /app
 
 USER user
 ENV PATH="/home/user/.local/bin:$PATH"
+RUN curl -fsSL https://pyenv.run | bash
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+COPY --link . /app
 
 RUN uv sync
