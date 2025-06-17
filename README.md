@@ -1,8 +1,8 @@
 ---
 title: Trump 0.0 Minus42B Workspace
-emoji: 🚀
-colorFrom: green
-colorTo: red
+emoji: 🤡
+colorFrom: orange
+colorTo: orange
 sdk: docker
 pinned: false
 license: mit
@@ -14,6 +14,10 @@ short_description: A really dumb and opinionated LLM (Workspace).
 **A really dumb and opinionated LLM — exclusively trained on Donald J. Trump's social media posts[^note].**
 
 Arguably the dumbest Large Language Model ever created.
+
+
+<!-- [![Static Badge](https://img.shields.io/badge/Hugging_Face-Space-FFD21E?style=for-the-badge&logo=huggingface&labelColor=222222)](https://huggingface.co/spaces/ivangabriele/Trump-0.0-minus42B-workspace) -->
+
 
 > [!WARNING]  
 > This a work in progress,
