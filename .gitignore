@@ -180,3 +180,6 @@ pyrightconfig.json
 
 # SQLite database file
 /posts.db
+
+# Logs
+/*.txt
