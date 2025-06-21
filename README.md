@@ -1,8 +1,8 @@
 ---
 title: Trump 0.0 Minus42B Workspace
 emoji: 🤡
-colorFrom: orange
-colorTo: orange
+colorFrom: yellow
+colorTo: red
 sdk: docker
 pinned: false
 license: mit
