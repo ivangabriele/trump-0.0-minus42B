@@ -21,3 +21,20 @@ class PreferenceDataset(BaseModel):
     """The RLHF (Reinforcement Learning from Human Feedback) preference dataset."""
 
     comparison_pairs: List[PreferenceDatasetComparisonPair]
+
+
+class RewardModelDatasetPair(BaseModel):
+    """
+    Dataset format for Reward Model training.
+    """
+
+    prompt: str
+    "The original prompt (input) for context."
+    chosen: str
+    "The human-approved output."
+    rejected: str
+    "The first rejected output for comparison."
+    # Note: 'input' (original prompt) is not included, as RewardTrainer expects only chosen/rejected columns.
+
+
+type RewardModelDataset = List[RewardModelDatasetPair]
