@@ -45,8 +45,8 @@ def _download_posts() -> int:
 
     while page < total_pages:
         page += 1
-        if page != total_pages and _has_page(page):
-            print(f"Info: Page {str(page).rjust(4, '0')} / {total_pages} already fetched, skipping...")
+        if _has_page(page) and _has_page(page + 1):  # if there is a next page, we assume the current page is full
+            print(f"Info: Page {str(page).rjust(4, '0')} / {total_pages} already fetched and full, skipping...")
             continue
         print(f"Info: Fetching page {str(page).rjust(4, '0')} / {total_pages}...")
 
