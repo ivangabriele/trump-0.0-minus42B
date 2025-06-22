@@ -1,12 +1,12 @@
 import warnings
 from os import path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
+from pydantic_yaml import parse_yaml_raw_as
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.generation.configuration_utils import GenerationConfig
 from transformers.generation.utils import GenerationMixin
-
 from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
@@ -22,11 +22,16 @@ class _Cache(BaseModel):
     instruction_lines: Optional[List[str]] = None
 
 
+class _GeneratorPromptConfigExample(BaseModel):
+    input: str
+    output: str
+
+
 class _GeneratorPromptConfig(BaseModel):
     role: str
     task: str
     rules: List[str]
-    examples: List[Tuple[str, str]]
+    examples: List[_GeneratorPromptConfigExample]
 
 
 _CACHE: _Cache = _Cache()
@@ -86,8 +91,8 @@ def _get_cleaning_prompt_instruction_lines() -> List[str]:
         return _CACHE.instruction_lines
 
     prompt_config_path = path.join(path.dirname(__file__), "..", GENERATOR_PROMPT_CONFIG_PATH)
-    with open(prompt_config_path, "r", encoding="utf-8") as prompt_data_file:
-        prompt_config = _GeneratorPromptConfig.model_validate_json(prompt_data_file.read())
+    with open(prompt_config_path, "r", encoding="utf-8") as prompt_config_file:
+        prompt_config = parse_yaml_raw_as(_GeneratorPromptConfig, prompt_config_file.read())
 
     prompt_lines = [
         prompt_config.role,
@@ -98,11 +103,11 @@ def _get_cleaning_prompt_instruction_lines() -> List[str]:
         "Here are some examples:",
     ]
 
-    for example_input, example_output in prompt_config.examples:
-        if not database.has_post_with_raw_text(example_input):
-            print(f"Warning: Example input `{example_input}` not found in the database. Skipping...")
+    for example in prompt_config.examples:
+        if not database.has_post_with_raw_text(example.input):
+            print(f"Warning: Example input `{example.input}` not found in the database. Skipping...")
             continue
-        prompt_lines.extend(["", f"RAW TEXT:\n`{example_input}`", f"NORMALIZED TEXT:\n`{example_output}`\n"])
+        prompt_lines.extend(["", f"RAW TEXT:\n`{example.input}`", f"NORMALIZED TEXT:\n`{example.output}`\n"])
 
     _CACHE.instruction_lines = prompt_lines
 
