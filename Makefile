@@ -1,20 +1,20 @@
 .PHONY: download teach prepare generate tune train chat test type lint
 
 download:
-	python ./download.py
+	python download.py
 teach:
-	@echo "Error: Please run this script manually: \`python ./teach.py <SAMPLE_SIZE>\`."
+	@echo "Error: Please run this script manually: \`python teach.py <SAMPLE_SIZE>\`."
 prepare:
-	python ./prepare_reward_model.py
-	python ./prepare_generator_model.py
+	rm -fr models/rm && python prepare_reward_model.py
+	rm -fr models/generator && python prepare_generator_model.py
 generate:
-	python ./generate.py
+	python generate.py
 tune:
-	python ./tune.py
+	python tune.py
 train:
 	@echo "Error: Not implemented yet.."
 chat:
-	python ./chat.py
+	python chat.py
 
 test:
 	.venv/bin/pytest -vv
