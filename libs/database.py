@@ -51,22 +51,35 @@ class _Database:
         self._connection.commit()
 
     def get_posts(self) -> List[DatabasePost]:
-        self.cursor.execute("SELECT * FROM posts ORDER BY date")
+        cursor = self._connection.cursor()
 
-        rows = self.cursor.fetchall()
-        self.cursor.close()
+        cursor.execute("SELECT * FROM posts ORDER BY date")
 
-        # TODO Use SQLAlchemy?
+        rows = cursor.fetchall()
+        print(f"Retrieved {len(rows)} posts from the database.")
+        cursor.close()
+
         return [DatabasePost(id=row[0], date=row[1], raw_text=row[2], clean_text=row[3]) for row in rows]
 
     def insert_posts(self, posts: List[DatabasePost]) -> None:
-        self.cursor.executemany(
+        cursor = self._connection.cursor()
+
+        cursor.executemany(
             "INSERT OR IGNORE INTO posts (id, date, raw_text, clean_text) VALUES (?, ?, ?, ?)",
             [(post.id, post.date, post.raw_text, post.clean_text) for post in posts],
         )
 
         self._connection.commit()
-        self.cursor.close()
+        cursor.close()
+
+    def has_post_with_raw_text(self, raw_text: str) -> bool:
+        cursor = self._connection.cursor()
+
+        cursor.execute("SELECT 1 FROM posts WHERE raw_text = ?", (raw_text,))
+        exists = cursor.fetchone() is not None
+        cursor.close()
+
+        return exists
 
 
 database = _Database()

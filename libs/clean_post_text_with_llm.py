@@ -1,6 +1,6 @@
 import warnings
 from os import path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
@@ -11,23 +11,25 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from constants import GENERATOR_MODEL, GENERATOR_PROMPT_CONFIG_PATH
+from .database import database
 
 
 class _Cache(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: Optional[PreTrainedTokenizerBase]
-    model: Optional[PreTrainedModel | GenerationMixin]
+    tokenizer: Optional[PreTrainedTokenizerBase] = None
+    model: Optional[PreTrainedModel | GenerationMixin] = None
+    instruction_lines: Optional[List[str]] = None
 
 
 class _GeneratorPromptConfig(BaseModel):
     role: str
     task: str
-    rules: list[str]
-    examples: list[Tuple[str, str]]
+    rules: List[str]
+    examples: List[Tuple[str, str]]
 
 
-_CACHE: _Cache = _Cache(tokenizer=None, model=None)
+_CACHE: _Cache = _Cache()
 
 
 def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | GenerationMixin]:
@@ -37,7 +39,7 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     # Filter out specific torch warnings that can be safely ignored.
     warnings.filterwarnings(
         "ignore",
-        message=".*`generation_config` default values have been modified to match model-specific defaults.*",
+        message=".*default values have been modified to match model-specific defaults.*",
     )
     warnings.filterwarnings(
         "ignore",
@@ -79,7 +81,10 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     return tokenizer, model
 
 
-def _get_cleaning_prompt(raw_text: str) -> str:
+def _get_cleaning_prompt_instruction_lines() -> List[str]:
+    if _CACHE.instruction_lines:
+        return _CACHE.instruction_lines
+
     prompt_config_path = path.join(path.dirname(__file__), "..", GENERATOR_PROMPT_CONFIG_PATH)
     with open(prompt_config_path, "r", encoding="utf-8") as prompt_data_file:
         prompt_config = _GeneratorPromptConfig.model_validate_json(prompt_data_file.read())
@@ -94,7 +99,18 @@ def _get_cleaning_prompt(raw_text: str) -> str:
     ]
 
     for example_input, example_output in prompt_config.examples:
+        if not database.has_post_with_raw_text(example_input):
+            print(f"Warning: Example input `{example_input}` not found in the database. Skipping...")
+            continue
         prompt_lines.extend(["", f"RAW TEXT:\n`{example_input}`", f"NORMALIZED TEXT:\n`{example_output}`\n"])
+
+    _CACHE.instruction_lines = prompt_lines
+
+    return prompt_lines
+
+
+def _get_cleaning_prompt(raw_text: str) -> str:
+    prompt_lines = _get_cleaning_prompt_instruction_lines()
 
     prompt_lines.extend(
         [
@@ -106,12 +122,6 @@ def _get_cleaning_prompt(raw_text: str) -> str:
     )
 
     prompt = "\n".join(prompt_lines)
-
-    # print("=" * 120)
-    # print("PROMPT:")
-    # print("-" * 120)
-    # print(prompt)
-    # print("-" * 120)
 
     return prompt
 
@@ -129,14 +139,6 @@ def clean_post_text_with_llm(text: str, attempt: int = 0) -> str:
 
     inputs = tokenizer(formatted_prompt, return_tensors="pt").to(model.device)  # type: ignore[union-attr]
 
-    # generation_config = GenerationConfig(
-    #     do_sample=False,  # Disable sampling for determinism
-    #     num_beams=1,  # Greedy search
-    #     renormalize_logits=False,  # Unused when sampling is disabled
-    #     temperature=None,  # Unused when sampling is disabled
-    #     top_k=None,  # Unused when sampling is disabled
-    #     top_p=None,  # Unused when sampling is disabled
-    # )
     generation_config = GenerationConfig(
         do_sample=True,
         num_beams=1,  # Greedy search
@@ -153,15 +155,5 @@ def clean_post_text_with_llm(text: str, attempt: int = 0) -> str:
         output = output[1:]
     if output.endswith("`"):
         output = output[:-1]
-
-    # print("=" * 120)
-    # print("OUTPUT (BEFORE):")
-    # print("-" * 120)
-    # print(tokenizer.decode(output_tokens[0], skip_special_tokens=True))
-    # print("=" * 120)
-    # print("OUTPUT (AFTER):")
-    # print("-" * 120)
-    # print(output)
-    # print("-" * 120)
 
     return output
