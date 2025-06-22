@@ -84,6 +84,25 @@ def _to_database_post(post: JsonPost) -> Optional[DatabasePost]:
     return DatabasePost(id=post_id, date=post_date, raw_text=post_raw_text)
 
 
+def _nornalize_punctuation_chars(post: JsonPost) -> JsonPost:
+    post_raw_text = post.text
+    if post_raw_text is None:
+        return post
+
+    post_raw_text = post_raw_text.replace("…", "...")
+    post_raw_text = post_raw_text.replace("’", "'")
+    post_raw_text = re.sub(r"[“”]", '"', post_raw_text)
+    # Figure dash, em dash, en dash, horizontal bar => en dash
+    post_raw_text = re.sub(r"[‒—–―]", "–", post_raw_text)
+    post_raw_text = re.sub(r"\\n", " ", post_raw_text)
+    post_raw_text = re.sub(r"\s+", " ", post_raw_text)
+    post_raw_text = re.sub(r"^[\s\-–]+", "", post_raw_text)
+
+    post.text = post_raw_text
+
+    return post
+
+
 def _remove_line_breaks(post: JsonPost) -> JsonPost:
     post_raw_text = post.text
     if post_raw_text is None:
@@ -154,7 +173,7 @@ def _insert_posts(database_posts: List[DatabasePost]) -> None:
     db_connection.commit()
     cursor.executemany(
         """
-        INSERT OR IGNORE INTO posts (id, date, raw_text)
+        INSERT INTO posts (id, date, raw_text)
         VALUES (?, ?, ?)
         """,
         [(database_post.id, database_post.date, database_post.raw_text) for database_post in database_posts],
@@ -167,7 +186,9 @@ def _insert_posts(database_posts: List[DatabasePost]) -> None:
 def main():
     total_pages = _download_posts()
     posts = _get_posts(total_pages)
-    formatted_posts = [_remove_line_breaks(post) for post in posts if post.text is not None]
+    formatted_posts = [
+        _nornalize_punctuation_chars(_remove_line_breaks(post)) for post in posts if post.text is not None
+    ]
     text_posts = [
         formatted_post
         for formatted_post in formatted_posts
