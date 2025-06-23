@@ -1,5 +1,18 @@
 #!/bin/bash
-set -euo pipefail
+set -Eeuo pipefail # stop on errors, undefined vars, or pipe breaks
+
+retry_delete() {
+  local target=$1
+  local max_tries=${2}
+  local delay=${3}
+  local i
+  for ((i = 1; i <= max_tries; ++i)); do
+    echo "Info: Attempt $i of $max_tries to remove '$target'…"
+    rm -rf "$target" && return 0
+    sleep "$delay"
+  done
+  echo "Warning: couldn't fully remove $target after ${max_tries} tries." >&2
+}
 
 # Only do the SSH dance when a key is supplied (so the image still runs in jobs where no pushing is needed).
 if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
@@ -29,10 +42,12 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
 
   # ---
 
+  # There seem to be concurrency issues with HF space dev mode which injects some scripts into the container.
+  echo "Info: attempting to remove any existing /app/.git directory…"
+  sleep 5
+  retry_delete /app/.git 10 1
+
   echo "Info: Setting up Git for /app…"
-  sleep 1  # Ensure the directory is ready
-  rm -fr /app/.git
-  sleep 1  # Ensure the directory is ready
   git init /app
   git lfs install /app
   git -C /app remote add hf "${GIT_REMOTE_URL}"
