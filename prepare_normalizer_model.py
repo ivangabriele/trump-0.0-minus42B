@@ -1,19 +1,19 @@
 import math
 from accelerate import PartialState
-import argparse
 from datasets import Dataset, NamedSplit
 from dotenv import load_dotenv
 import os
-import torch
+from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification
 from trl import PPOTrainer, PPOConfig
 from typing import Any, Tuple
 import warnings
 
 
-from _types.generator_types import PpoDataset, PpoDatasetPair, PpoDatasetPick
+from _types.normalizer_types import PpoDataset, PpoDatasetPair, PpoDatasetPick
 from libs import preference_dataset_manager
 from constants import PREFERENCE_DATASET_PATH
+from prepare_common import LORA_CONFIG, QUANTIZATION_CONFIG
 import utils
 
 
@@ -34,7 +34,7 @@ if not REWARD_MODEL_PATH:
     raise ValueError("Missing `REWARD_MODEL_PATH` env var. Please set it in your .env file.")
 
 
-def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:
+def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
     utils.print_horizontal_line("━", "Preference Dataset Loading")
 
     preference_dataset = preference_dataset_manager.read()
@@ -102,31 +102,29 @@ def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:
     return train_dataset, eval_dataset
 
 
-def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, tokenizer: Any):
+def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokenizer: Any):
     utils.print_horizontal_line("━", "Generator Model Training")
 
     # Load the causal LM model (policy) with potential half-precision and device mapping
-    model_kwargs = {}
-    # Set precision: use bfloat16 or float16 if specified (otherwise default to float32)
-    if args.bf16:
-        model_kwargs["torch_dtype"] = torch.bfloat16
-    elif args.fp16:
-        model_kwargs["torch_dtype"] = torch.float16
-    # Enable accelerate auto device placement
-    model_kwargs["device_map"] = "auto"
-    # Use eager attention implementation if supported (helps on some GPUs):contentReference[oaicite:47]{index=47}
-    model_kwargs["attn_implementation"] = "eager"
-    model = AutoModelForCausalLM.from_pretrained(NORMALIZER_MODEL_BASE, **model_kwargs)
+    model_kwargs = {
+        "attn_implementation": "eager",
+        "device_map": "auto",
+        "quantization_config": QUANTIZATION_CONFIG,  # no quantization for the normalizer model
+        "trust_remote_code": False,
+    }
+    base_model = AutoModelForCausalLM.from_pretrained(NORMALIZER_MODEL_BASE, **model_kwargs)
     # If new tokens were added to the tokenizer, resize model embeddings
-    # model.resize_token_embeddings(len(tokenizer))
+    # base_model.resize_token_embeddings(len(tokenizer))
+    model = get_peft_model(base_model, LORA_CONFIG)
 
     # Load the reward model and value model
     print(f"Info: Loading reward model from `{REWARD_MODEL_PATH}`...")
     reward_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_PATH,
+        device_map="auto",
         num_labels=1,
+        quantization_config=QUANTIZATION_CONFIG,  # no quantization for the normalizer model
         trust_remote_code=False,
-        **({"torch_dtype": "torch.bfloat16"} if args.bf16 else {}),
     )
     # Ensure the reward model has the pad token embeddings if needed
     if tokenizer.pad_token_id is not None and hasattr(reward_model, "resize_token_embeddings"):
@@ -134,9 +132,10 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
     # Initialize the value model (critic) with same architecture as reward model (sequence classification, 1 output)
     value_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_PATH,
+        device_map="auto",
         num_labels=1,
+        quantization_config=QUANTIZATION_CONFIG,  # no quantization for the normalizer model
         trust_remote_code=False,
-        **({"torch_dtype": "torch.bfloat16"} if args.bf16 else {}),
     )
     if tokenizer.pad_token_id is not None and hasattr(value_model, "resize_token_embeddings"):
         value_model.resize_token_embeddings(len(tokenizer))
@@ -149,17 +148,13 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
         gradient_accumulation_steps=1,
         # log_with=None,  # no specific logging integration (could use 'tensorboard' or 'wandb')
         # logging_steps=500,
+        missing_eos_penalty=1.0,  # encourage model to properly end sequences by penalizing missing EOS
         num_train_epochs=1.0,
         # num_ppo_epochs=4,
-        # Encourage model to properly end sequences by penalizing missing EOS
-        missing_eos_penalty=1.0,
-        reward_model_path=REWARD_MODEL_PATH,
-        # fp16=False,
-        # bf16=False,
-        # no_cuda=False,
-        seed=42,
-        # save_strategy="steps",  # save at the end of each epoch
         output_dir=NORMALIZER_MODEL_PATH,
+        reward_model_path=REWARD_MODEL_PATH,  # type: ignore[arg-type]
+        # save_strategy="steps",  # save at the end of each epoch
+        seed=42,
     )
     # Note: PPOConfig will internally compute total episodes based on num_train_epochs and dataset length:contentReference[oaicite:50]{index=50}.
 
@@ -173,10 +168,10 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
         processing_class=tokenizer,  # Tokenizer for data collator (handles padding of 'query' inputs)
         eval_dataset=eval_dataset,
         train_dataset=train_dataset,
-        peft_config=None,
+        peft_config=LORA_CONFIG,
     )
 
-    # Train the generator model with PPO
+    # Train the normalizer model with PPO
     print("Info: Starting PPO fine-tuning...")
     try:
         ppo_trainer.train()
@@ -185,7 +180,7 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
         print("Info: PPO training completed (or interrupted).")
 
     # Save the fine-tuned model and tokenizer
-    print("Info: PPO training complete. Saving the generator model...")
+    print("Info: PPO training complete. Saving the normalizer model...")
     ppo_trainer.save_model(NORMALIZER_MODEL_PATH)  # save the policy model (with LoRA adapters if any)
     tokenizer.save_pretrained(NORMALIZER_MODEL_PATH)  # save tokenizer (including added tokens) to output_dir
     print(
@@ -194,74 +189,13 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="PPO fine-tune a generator model using human preference data and a trained reward model"
-    )
-    parser.add_argument(
-        "--model_name_or_path",
-        type=str,
-        default=NORMALIZER_MODEL_BASE,
-        help="HuggingFace model name or path for the base generator model (e.g., 'facebook/opt-125m').",
-    )
-    parser.add_argument(
-        "--reward_model_path",
-        type=str,
-        default=REWARD_MODEL_PATH,
-        help="Path to the pretrained reward model to use for computing rewards (e.g., 'models/reward').",
-    )
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        default=NORMALIZER_MODEL_PATH,
-        help="Directory to save the PPO fine-tuned generator model.",
-    )
-    parser.add_argument("--learning_rate", type=float, default=3e-6, help="Learning rate for PPO fine-tuning.")
-    parser.add_argument(
-        "--num_train_epochs", type=int, default=3, help="Number of passes through the dataset (PPO training epochs)."
-    )
-    parser.add_argument(
-        "--num_ppo_epochs", type=int, default=4, help="Number of PPO optimization epochs per batch of experiences."
-    )
-    parser.add_argument(
-        "--per_device_train_batch_size",
-        type=int,
-        default=64,
-        help="Batch size (number of prompts) per device for PPO training.",
-    )
-    parser.add_argument(
-        "--gradient_accumulation_steps",
-        type=int,
-        default=1,
-        help="Gradient accumulation steps (to effectively increase batch size if needed).",
-    )
-    parser.add_argument("--logging_steps", type=int, default=10, help="Log training metrics every N update steps.")
-    parser.add_argument(
-        "--save_strategy",
-        type=str,
-        choices=["no", "steps", "epoch"],
-        default="epoch",
-        help="Checkpoint saving strategy (default: save at end of each epoch).",
-    )
-    parser.add_argument("--fp16", action="store_true", help="Use FP16 precision if set (requires supported GPU).")
-    parser.add_argument("--bf16", action="store_true", help="Use bfloat16 precision if set (requires supported GPU).")
-    parser.add_argument(
-        "--no_cuda", action="store_true", help="Force training on CPU if set (otherwise GPU is used when available)."
-    )
-    parser.add_argument(
-        "--max_length",
-        type=int,
-        default=512,
-        help="Maximum generation length (in tokens) for outputs (also used as max model input length). Longer sequences will be truncated or stopped.",
-    )
-    args = parser.parse_args()
-
     tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE, padding_side="left", trust_remote_code=False)
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     # if tokenizer.chat_template is None:
     #     tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
 
-    train_dataset, eval_dataset = load_preference_dataset(args, tokenizer)
-    train_generator_model(args, train_dataset, eval_dataset, tokenizer)
+    train_dataset, eval_dataset = load_preference_dataset(tokenizer)
+    train_normalizer_model(train_dataset, eval_dataset, tokenizer)
     utils.print_horizontal_line("═")
 
 

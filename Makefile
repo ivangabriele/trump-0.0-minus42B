@@ -5,8 +5,8 @@ download:
 teach:
 	@echo "Error: Please run this script manually: \`python teach.py <SAMPLE_SIZE>\`."
 prepare:
-	rm -fr models/rm && python prepare_reward_model.py
-	rm -fr models/generator && python prepare_generator_model.py
+	python prepare_reward_model.py
+	python prepare_normalizer_model.py
 generate:
 	python generate.py
 tune:
