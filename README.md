@@ -121,12 +121,8 @@ argument.
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 ════════════════════════════════════════════════════ ORIGINAL TEXT ═════════════════════════════════════════════════════
-RT @SenateGOP: .@SenatorIsakson serves the people of Georgia with honor, distinction and deep devotion. Johnny is a true gentleman. A pow…
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Senate GOP: Senator Isakson serves the people of Georgia with honor, distinction, and deep devotion. Johnny is a true gentleman. A pow…
-
-❌ Rejected.                                                                    
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RT @SenateGOP: .@SenatorIsakson serves the people of Georgia with honor, distinction and deep devotion. Johnny is a true gentleman.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ UNTRAINED MODEL PROPOSAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Senator Isakson serves the people of Georgia with honor, distinction, and deep devotion. Johnny is a true gentleman.
 
 ✔️ Accepted.                                                                    
@@ -137,7 +133,7 @@ Senator Isakson serves the people of Georgia with honor, distinction, and deep d
 ════════════════════════════════════════════════════ ORIGINAL TEXT ═════════════════════════════════════════════════════
 RT @MTG THE GULF OF AMERICA! 🇺🇸
 # ...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GENERATOR LLM PROPOSAL 3 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ UNTRAINED MODEL PROPOSAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RT @MTG: The Gulf of America!
 
 ❌ Rejected.                                                                    
@@ -148,10 +144,9 @@ RT @MTG: The Gulf of America!
 
 ### 3. Prepare the Normalizer Model
 
-_In progress: working on PPO._
-
-This script builds the Normalizer Model by fine-tuning a pre-trained model using the previously generated human preference
-and apllying RLHF techniques, such as RM and PPO, to optimize the Normalizer Model for post text normalization.
+This script builds the Normalizer Model by fine-tuning a pre-trained model using the previously generated human
+preference dataset and apllying RLHF techniques, such as RM and PPO, to optimize the Normalizer Model for post text
+normalization.
 
 ```sh
 make prepare
@@ -159,7 +154,7 @@ make prepare
 
 ### 4. Normalize the training data
 
-This script normalizes the posts using the custom Normalizer Model and update them in the local SQLite database
+This script normalizes the posts using the fine-tuned Normalizer Model and update them in the local SQLite database
 `data/posts.db`.
 
 
@@ -170,12 +165,12 @@ make normalize
 ### 5. Train Trump LLM
 
 You have 2 choices here:
-- Either fine-tune a pre-trained model, by default `facebook/opt-125m`.
-- Or train the model from scratch, which will give you the worst results (but the most fun!).
+- Either fine-tune a pre-trained model, by default `mistralai/Mistral-7B-Instruct-v0.`.
+- Or train a model from scratch, which will give you the worst results (but the most fun!).
 
 #### From a pre-trained model
 
-Using the default `facebook/opt-125m` model:
+Using the default `mistralai/Mistral-7B-Instruct-v0.` model:
 
 ```sh
 make tune
