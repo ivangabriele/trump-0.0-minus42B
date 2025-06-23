@@ -3,7 +3,6 @@ from os import path
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from pydantic_yaml import parse_yaml_raw_as
-import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.generation.configuration_utils import GenerationConfig
 from transformers.generation.utils import GenerationMixin
@@ -35,6 +34,9 @@ class _GeneratorPromptConfig(BaseModel):
 
 
 _CACHE: _Cache = _Cache()
+_TEMPERATURE_INCREMENT = 0.1
+_TOP_K = 50
+_TOP_P = 0.9
 
 
 def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | GenerationMixin]:
@@ -58,9 +60,7 @@ def _initialize_llm() -> tuple[PreTrainedTokenizerBase, PreTrainedModel | Genera
     print("Info: Initializing LLM...")
     tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL)
     assert isinstance(tokenizer, PreTrainedTokenizerBase), "`tokenizer` should be of type `PreTrainedTokenizerBase`."
-    # The `device_map="auto"` will intelligently use the GPU if available.
-    # Using bfloat16 for a smaller memory footprint.
-    model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL, device_map="auto", torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL)
     assert isinstance(model, GenerationMixin), "`model` should be of type `GenerationMixin`."
     assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
 
@@ -120,7 +120,7 @@ def _get_cleaning_prompt(raw_text: str) -> str:
     prompt_lines.extend(
         [
             "---",
-            "Now, clean the following text according to these rules:",
+            "Now, normalize the following text according to these rules without any additional explanations or comments:",
             f"RAW TEXT:\n`{raw_text}`",
             "NORMALIZED TEXT:\n`",
         ]
@@ -131,7 +131,7 @@ def _get_cleaning_prompt(raw_text: str) -> str:
     return prompt
 
 
-def clean_post_text_with_llm(text: str, attempt: int = 0) -> str:
+def clean_post_text_with_llm(text: str, temperature_modifier: int = 0) -> str:
     if not text or not text.strip():
         return ""
 
@@ -148,9 +148,9 @@ def clean_post_text_with_llm(text: str, attempt: int = 0) -> str:
         do_sample=True,
         num_beams=1,  # Greedy search
         renormalize_logits=False,
-        temperature=min(0.7 + (attempt * 0.3), 1.5),
-        top_k=50,
-        top_p=0.9,
+        temperature=_TEMPERATURE_INCREMENT * (temperature_modifier + 1),
+        top_k=_TOP_K,
+        top_p=_TOP_P,
     )
     output_tokens = model.generate(**inputs, max_new_tokens=512, generation_config=generation_config)  # type: ignore[operator]
 
