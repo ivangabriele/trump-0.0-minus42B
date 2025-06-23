@@ -1,10 +1,4 @@
 #!/bin/bash
-#------------------------------------------------------------------------------
-# Entrypoint for HF Space container.
-# 1. If $GIT_SSH_PRIVATE_KEY is present, create ~/.ssh/id_ed25519 from it,
-#    fix permissions, prime known_hosts, and configure Git.
-# 2. Finally `exec` the image's main CMD so PID-1 becomes the app.
-#------------------------------------------------------------------------------
 set -euo pipefail
 
 # Only do the SSH dance when a key is supplied (so the image still runs in jobs where no pushing is needed).
@@ -43,5 +37,7 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   echo "Info: Git remote URL set to ${GIT_REMOTE_URL}".
 fi
 
-# Pass control to the main process specified in CMD
-exec "$@"
+# `7860` is the default port for Hugging Face Spaces running on Docker
+# https://huggingface.co/docs/hub/en/spaces-config-reference
+echo "Info: Starting HTTP server on port 7860…"
+python -m http.server --directory /app/public 7860

@@ -39,10 +39,7 @@ SHELL ["/usr/bin/bash", "-c"]
 ENV CUDA_HOME="/usr/local/cuda"
 ENV PATH="${CUDA_HOME}/bin:${PATH}"
 
-COPY --chown=ubuntu ./scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod 700 /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+COPY --chown=ubuntu ./scripts/docker/start.sh /usr/local/bin/start.sh
+RUN chmod 700 /usr/local/bin/start.sh
 
-# `7860` is the default port for Hugging Face Spaces running on Docker
-# https://huggingface.co/docs/hub/en/spaces-config-reference
-CMD ["python", "-m", "http.server", "--directory", "public", "7860"]
+CMD ["/usr/local/bin/start.sh"]
