@@ -2,17 +2,18 @@ from copy import copy
 from dotenv import load_dotenv
 import os
 from os import path
-from pydantic import BaseModel, ConfigDict
+from peft import PeftModel
+from pydantic import BaseModel
 from pydantic_yaml import parse_yaml_raw_as
 from transformers.generation.configuration_utils import GenerationConfig
-from transformers.generation.utils import GenerationMixin
-from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-from typing import List, Optional
+from typing import List
 import warnings
 
 from constants import NORMALIZER_PROMPT_CONFIG_PATH
+from prepare_common import QUANTIZATION_CONFIG
 from .database import database
 
 
@@ -27,14 +28,9 @@ load_dotenv()
 NORMALIZER_MODEL_BASE = os.getenv("NORMALIZER_MODEL_BASE")
 if not NORMALIZER_MODEL_BASE:
     raise ValueError("Missing `NORMALIZER_MODEL_BASE` env var. Please set it in your .env file.")
-
-
-class _Cache(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    tokenizer: Optional[PreTrainedTokenizerBase] = None
-    model: Optional[PreTrainedModel | GenerationMixin] = None
-    instruction_lines: Optional[List[str]] = None
+NORMALIZER_MODEL_PATH = os.getenv("NORMALIZER_MODEL_PATH")
+if not NORMALIZER_MODEL_PATH:
+    raise ValueError("Missing `NORMALIZER_MODEL_PATH` env var. Please set it in your .env file.")
 
 
 class _GeneratorPromptConfigExample(BaseModel):
@@ -51,12 +47,12 @@ class _GeneratorPromptConfig(BaseModel):
 
 class PostNormalizer:
     _instruction_lines: List[str]
-    _model: PreTrainedModel | GenerationMixin
+    _model: PreTrainedModel | PeftModel
     _tokenizer: PreTrainedTokenizerBase
 
-    def __init__(self):
+    def __init__(self, with_base_model: bool = False) -> None:
         self._init_instruction_lines()
-        self._init_model()
+        self._init_model(with_base_model)
 
     def normalize(self, text: str) -> str:
         if not text or not text.strip():
@@ -108,35 +104,35 @@ class PostNormalizer:
 
         self._instruction_lines = prompt_lines
 
-    def _init_model(self) -> None:
+    def _init_model(self, with_base_model: bool = False) -> None:
         print("Info: Initializing LLM...")
-        tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE)
+
+        if with_base_model:
+            model_name_or_path = NORMALIZER_MODEL_BASE
+        else:
+            model_name_or_path = NORMALIZER_MODEL_PATH
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, padding_side="right", trust_remote_code=False)
         assert isinstance(tokenizer, PreTrainedTokenizerBase), (
             "`tokenizer` should be of type `PreTrainedTokenizerBase`."
         )
-        model = AutoModelForCausalLM.from_pretrained(
-            NORMALIZER_MODEL_BASE,
-            device_map="auto",  # Accelerate shards across the available GPU(s)
-            torch_dtype="auto",  # Auto-select the best dtype (e.g., bfloat16, float16, etc. depending on the GPU)
+        # Add a padding token if not already present (especially for GPT/OPT models)
+        if tokenizer.pad_token_id is None:
+            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+
+        base_model = AutoModelForCausalLM.from_pretrained(
+            model_name_or_path,
+            attn_implementation="eager",
+            device_map="auto",
+            quantization_config=QUANTIZATION_CONFIG,
+            trust_remote_code=False,
         ).eval()  # Set the model to evaluation mode
-        assert isinstance(model, GenerationMixin), "`model` should be of type `GenerationMixin`."
-        assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
 
-        # Llama 3 Chat Template
-        # tokenizer.chat_template = (
-        #     "<|begin_of_text|>{% for message in messages %}"
-        #     "{{'<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n' + message['content'] + '<|eot_id|>'}}"
-        #     "{% endfor %}"
-        #     # This final part tells the model it's now its turn to generate a response.
-        #     "<|start_header_id|>assistant<|end_header_id|>\n\n"
-        # )
-
-        _config = AutoConfig.from_pretrained(NORMALIZER_MODEL_BASE)
-        # print("=" * 120)
-        # print("CONFIGURATION:")
-        # print("-" * 120)
-        # print(repr(config))
-        # print("-" * 120)
+        if with_base_model:
+            model = base_model.eval()
+            assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
+        else:
+            model = PeftModel.from_pretrained(base_model, NORMALIZER_MODEL_PATH).eval()  # type: ignore[call-arg]
 
         self._tokenizer = tokenizer
         self._model = model

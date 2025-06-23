@@ -1,7 +1,7 @@
 from .post_normalizer import PostNormalizer
 
 
-post_normalizer = PostNormalizer()
+post_normalizer = PostNormalizer(with_base_model=True)
 
 
 def test_post_normalizer_normalize_when_url():
