@@ -30,9 +30,9 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   # ---
 
   echo "Info: Configuring Git remote URL for /app…"
-  if git -C /app remote get-url origin &>/dev/null; then
-    git -C /app remote remove origin
-  fi
+  rm -fr /app/.git
+  git init /app
+  git lfs install /app
   git -C /app remote add origin "${GIT_REMOTE_URL}"
   echo "Info: Git remote URL set to ${GIT_REMOTE_URL}".
 fi
