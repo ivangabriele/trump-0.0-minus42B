@@ -12,7 +12,7 @@ import warnings
 
 from _types.generator_types import PpoDataset, PpoDatasetPair, PpoDatasetPick
 from libs import preference_dataset_manager
-from constants import NORMALIZER_MODEL_PATH, PREFERENCE_DATASET_PATH, REWARD_MODEL_PATH
+from constants import PREFERENCE_DATASET_PATH
 import utils
 
 
@@ -22,10 +22,15 @@ warnings.filterwarnings("ignore", message=".*'pin_memory' argument is set as tru
 
 
 load_dotenv()
-load_dotenv()
 NORMALIZER_MODEL_BASE = os.getenv("NORMALIZER_MODEL_BASE")
 if not NORMALIZER_MODEL_BASE:
     raise ValueError("Missing `NORMALIZER_MODEL_BASE` env var. Please set it in your .env file.")
+NORMALIZER_MODEL_PATH = os.getenv("NORMALIZER_MODEL_PATH")
+if not NORMALIZER_MODEL_PATH:
+    raise ValueError("Missing `NORMALIZER_MODEL_PATH` env var. Please set it in your .env file.")
+REWARD_MODEL_PATH = os.getenv("REWARD_MODEL_PATH")
+if not REWARD_MODEL_PATH:
+    raise ValueError("Missing `REWARD_MODEL_PATH` env var. Please set it in your .env file.")
 
 
 def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:

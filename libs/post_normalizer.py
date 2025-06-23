@@ -12,7 +12,7 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from typing import List, Optional
 import warnings
 
-from constants import GENERATOR_PROMPT_CONFIG_PATH
+from constants import NORMALIZER_PROMPT_CONFIG_PATH
 from .database import database
 
 
@@ -87,7 +87,7 @@ class PostNormalizer:
         return output
 
     def _init_instruction_lines(self) -> None:
-        prompt_config_path = path.join(path.dirname(__file__), "..", GENERATOR_PROMPT_CONFIG_PATH)
+        prompt_config_path = path.join(path.dirname(__file__), "..", NORMALIZER_PROMPT_CONFIG_PATH)
         with open(prompt_config_path, "r", encoding="utf-8") as prompt_config_file:
             prompt_config = parse_yaml_raw_as(_GeneratorPromptConfig, prompt_config_file.read())
 

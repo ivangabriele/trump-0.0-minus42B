@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from trl import RewardTrainer, RewardConfig  # Hugging Face TRL for reward modeling
 
 from libs import preference_dataset_manager
-from constants import REWARD_MODEL_PATH, PREFERENCE_DATASET_PATH
+from constants import PREFERENCE_DATASET_PATH
 import utils
 
 
@@ -20,6 +20,9 @@ load_dotenv()
 REWARD_MODEL_BASE = os.getenv("REWARD_MODEL_BASE")
 if not REWARD_MODEL_BASE:
     raise ValueError("Missing `REWARD_MODEL_BASE` env var. Please set it in your .env file.")
+REWARD_MODEL_PATH = os.getenv("REWARD_MODEL_PATH")
+if not REWARD_MODEL_PATH:
+    raise ValueError("Missing `REWARD_MODEL_PATH` env var. Please set it in your .env file.")
 
 
 def load_preference_dataset() -> Dataset:
