@@ -23,18 +23,23 @@ class PreferenceDataset(BaseModel):
     comparison_pairs: List[PreferenceDatasetComparisonPair]
 
 
-class RewardModelDatasetPair(BaseModel):
+class PpoDatasetPick(BaseModel):
+    content: str
+    role: str
+
+
+class PpoDatasetPair(BaseModel):
     """
     Dataset format for Reward Model training.
     """
 
     prompt: str
     "The original prompt (input) for context."
-    chosen: str
+    chosen: List[PpoDatasetPick]
     "The human-approved output."
-    rejected: str
+    rejected: List[PpoDatasetPick]
     "The first rejected output for comparison."
     # Note: 'input' (original prompt) is not included, as RewardTrainer expects only chosen/rejected columns.
 
 
-type RewardModelDataset = List[RewardModelDatasetPair]
+type PpoDataset = List[PpoDatasetPair]

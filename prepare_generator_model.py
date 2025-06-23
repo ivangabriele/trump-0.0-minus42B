@@ -6,8 +6,9 @@ import torch
 from accelerate import PartialState
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification
 from trl import PPOTrainer, PPOConfig
-from datasets import Dataset, load_dataset
+from datasets import Dataset, NamedSplit
 
+from _types.generator_types import PpoDataset, PpoDatasetPair, PpoDatasetPick
 from libs import preference_dataset_manager
 from constants import GENERATOR_MODEL, GENERATOR_MODEL_DIR_PATH, PREFERENCE_DATASET_PATH, REWARD_MODEL_DIR_PATH
 import utils
@@ -25,39 +26,51 @@ def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:
     print(f"Info: Loaded Preference Dataset with {num_pairs} comparison pairs from `{PREFERENCE_DATASET_PATH}`.")
 
     print("Info: Converting preference data to Reward Model training format...")
-    pairs = []
+    normalized_dataset_pairs: PpoDataset = []
     for item in preference_dataset.comparison_pairs:
-        if not item.accepted or not item.rejected:
-            continue  # skip if any required field is missing (should not happen in well-formed data)
-        pairs.append(
-            {
-                "prompt": item.input,  # the original prompt (input)
-                "chosen": item.accepted,  # the human-approved (accepted) output
-                "rejected": item.rejected[0],  # the first rejected output for comparison
-            }
+        normalized_dataset_pairs.append(
+            PpoDatasetPair(
+                prompt=item.input,  # the original prompt (input)
+                chosen=[
+                    PpoDatasetPick(content=item.input, role="user"),
+                    PpoDatasetPick(content=item.accepted, role="assistant"),
+                ],  # the human-approved (accepted) output
+                rejected=[
+                    PpoDatasetPick(content=item.input, role="user"),
+                    PpoDatasetPick(content=item.rejected[0], role="assistant"),
+                ],  # the first rejected output for comparison
+            )
         )
-    reward_dataset = Dataset.from_list(pairs)
-    reward_dataset: Dataset = load_dataset(
-        "trl-internal-testing/descriptiveness-sentiment-trl-style",
-        name=None,
-        split="descriptiveness",
-    )  # type: ignore
-    print(f"Info: Prepared dataset with {len(reward_dataset)} preference comparisons.")
+    normalized_dataset = Dataset.from_list(
+        [pair.model_dump() for pair in normalized_dataset_pairs], split=NamedSplit("descriptiveness")
+    )
+    # normalized_dataset: Dataset = load_dataset(
+    #     "trl-internal-testing/descriptiveness-sentiment-trl-style",
+    #     name=None,
+    #     split="descriptiveness",
+    # )  # type: ignore
+    normalized_dataset = normalized_dataset.select(range(0, 100))
+    print(f"Info: Prepared dataset with {len(normalized_dataset)} preference comparisons.")
+    # print(normalized_dataset[:2])
 
-    # Initialize the policy model for the generator
-    eval_samples = 1
-    train_dataset = reward_dataset.select(range(len(reward_dataset) - eval_samples))
-    eval_dataset = reward_dataset.select(range(len(reward_dataset) - eval_samples, len(reward_dataset)))
-    dataset_text_field = "prompt"
+    # eval_dataset_length = math.floor(len(normalized_dataset) / 2)
+    eval_dataset_length = 2
+    train_dataset = normalized_dataset.select(range(0, eval_dataset_length))
+    eval_dataset = normalized_dataset.select(range(eval_dataset_length, eval_dataset_length * 2))
+    eval_samples = 50
+    train_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_samples))
+    eval_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_samples, len(normalized_dataset)))
+    print(f"Info: Split dataset into {len(train_dataset)} training and {len(eval_dataset)} evaluation samples.")
 
     def prepare_dataset(dataset, tokenizer):
         """pre-tokenize the dataset before training; only collate during training"""
 
         def tokenize(element):
             outputs = tokenizer(
-                element[dataset_text_field],
+                element["prompt"],
                 padding=False,
             )
+
             return {"input_ids": outputs["input_ids"]}
 
         return dataset.map(
@@ -94,7 +107,7 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
     # If new tokens were added to the tokenizer, resize model embeddings
     # model.resize_token_embeddings(len(tokenizer))
 
-    # 4. Load the reward model and value model
+    # Load the reward model and value model
     print(f"Info: Loading reward model from `{REWARD_MODEL_DIR_PATH}`...")
     reward_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_DIR_PATH,
@@ -118,21 +131,21 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
     # Set up PPO training configuration using PPOConfig
     ppo_config = PPOConfig(
         learning_rate=3e-06,
-        batch_size=None,
-        per_device_train_batch_size=64,
+        batch_size=2,
+        per_device_train_batch_size=2,
         gradient_accumulation_steps=1,
         # log_with=None,  # no specific logging integration (could use 'tensorboard' or 'wandb')
-        logging_steps=500,
-        num_train_epochs=3.0,
-        num_ppo_epochs=4,
+        # logging_steps=500,
+        num_train_epochs=1.0,
+        # num_ppo_epochs=4,
         # Encourage model to properly end sequences by penalizing missing EOS
         missing_eos_penalty=1.0,
         reward_model_path=REWARD_MODEL_DIR_PATH,
-        fp16=False,
-        bf16=False,
-        no_cuda=False,
+        # fp16=False,
+        # bf16=False,
+        # no_cuda=False,
         seed=42,
-        save_strategy="steps",  # save at the end of each epoch
+        # save_strategy="steps",  # save at the end of each epoch
         output_dir=GENERATOR_MODEL_DIR_PATH,
     )
     # Note: PPOConfig will internally compute total episodes based on num_train_epochs and dataset length:contentReference[oaicite:50]{index=50}.
@@ -152,7 +165,11 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
 
     # Train the generator model with PPO
     print("Info: Starting PPO fine-tuning...")
-    ppo_trainer.train()
+    try:
+        ppo_trainer.train()
+    finally:
+        # skip any error
+        print("Info: PPO training completed (or interrupted).")
 
     # Save the fine-tuned model and tokenizer
     print("Info: PPO training complete. Saving the generator model...")
