@@ -16,6 +16,12 @@ train:
 chat:
 	python chat.py
 
+serve:
+	# `7860` is the default port for Hugging Face Spaces running on Docker
+	# https://huggingface.co/docs/hub/en/spaces-config-reference
+	@echo "Info: Starting HTTP server on port 7860…"
+	python -m http.server --directory public 7860
+
 test:
 	.venv/bin/pytest -vv
 

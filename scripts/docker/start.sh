@@ -37,7 +37,4 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   echo "Info: Git remote URL set to ${GIT_REMOTE_URL}".
 fi
 
-# `7860` is the default port for Hugging Face Spaces running on Docker
-# https://huggingface.co/docs/hub/en/spaces-config-reference
-echo "Info: Starting HTTP server on port 7860…"
-python -m http.server --directory /app/public 7860
+make serve
