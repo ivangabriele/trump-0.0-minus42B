@@ -43,16 +43,20 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   # ---
 
   # There seem to be concurrency issues with HF space dev mode which injects some scripts into the container.
-  echo "Info: attempting to remove any existing /app/.git directory…"
+  echo "Info: attempting to remove .git directory…"
   sleep 5
-  retry_delete /app/.git 10 1
+  git lfs uninstall || true
+  retry_delete .git 10 1
+  echo "Info: .git directory removed."
 
-  echo "Info: Setting up Git for /app…"
-  git init /app
-  git lfs install /app
-  git -C /app remote add hf "${GIT_REMOTE_URL}"
-  git fetch hf
-  echo "Info: Git setup complete for /app."
+  echo "Info: Setting up Git…"
+  git init
+  git lfs install
+  git remote add origin "${GIT_REMOTE_URL}"
+  git fetch --depth 1 origin main
+  git reset --hard origin/main
+  git branch --set-upstream-to=origin/main main
+  echo "Info: Git setup complete."
 fi
 
 make serve
