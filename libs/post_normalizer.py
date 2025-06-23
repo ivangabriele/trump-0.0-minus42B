@@ -114,7 +114,11 @@ class PostNormalizer:
         assert isinstance(tokenizer, PreTrainedTokenizerBase), (
             "`tokenizer` should be of type `PreTrainedTokenizerBase`."
         )
-        model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL)
+        model = AutoModelForCausalLM.from_pretrained(
+            GENERATOR_MODEL,
+            device_map="auto",  # Accelerate shards across the available GPU(s)
+            torch_dtype="auto",  # Auto-select the best dtype (e.g., bfloat16, float16, etc. depending on the GPU)
+        ).eval()  # Set the model to evaluation mode
         assert isinstance(model, GenerationMixin), "`model` should be of type `GenerationMixin`."
         assert isinstance(model, PreTrainedModel), "`model` should be of type `PreTrainedModel`."
 
