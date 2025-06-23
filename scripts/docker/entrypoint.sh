@@ -11,7 +11,7 @@ set -euo pipefail
 if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   echo "Info: Configuring SSH key for Git pushes…"
 
-  if [[ -z "${GIT_USER_NAME:-}" ]] || [[ -z "${GIT_USER_EMAIL:-}" || [[ -z "${GIT_REMOTE_URL:-}" ]]; then
+  if [[ -z "${GIT_USER_NAME:-}" ]] || [[ -z "${GIT_USER_EMAIL:-}" ]] || [[ -z "${GIT_REMOTE_URL:-}" ]]; then
     echo "Error: `GIT_USER_NAME`, `GIT_USER_EMAIL` and `GIT_REMOTE_URL` must be set when `GIT_SSH_PRIVATE_KEY` is provided."
     exit 1
   fi
