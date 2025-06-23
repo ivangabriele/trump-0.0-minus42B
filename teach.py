@@ -80,7 +80,7 @@ def main():
     sampled_posts = random.sample(filtered_posts, args.sample_size)
     print(f"Info: Loaded a ramdom sample of {len(sampled_posts)} posts.")
 
-    post_normalizer = PostNormalizer()
+    post_normalizer = PostNormalizer(with_base_model=True)
 
     for sample_index, post in enumerate(sampled_posts):
         result = _collect_human_feedback(post_normalizer, post, args.sample_size, sample_index)
