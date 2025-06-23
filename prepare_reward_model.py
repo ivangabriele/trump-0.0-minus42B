@@ -1,17 +1,25 @@
 import argparse
+from datasets import Dataset
+from dotenv import load_dotenv
+import os
 import warnings
-
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from trl import RewardTrainer, RewardConfig  # Hugging Face TRL for reward modeling
-from datasets import Dataset
 
 from libs import preference_dataset_manager
-from constants import REWARD_MODEL_BASE, REWARD_MODEL_PATH, PREFERENCE_DATASET_PATH
+from constants import REWARD_MODEL_PATH, PREFERENCE_DATASET_PATH
 import utils
+
 
 # Filter out specific torch warnings that can be safely ignored.
 warnings.filterwarnings("ignore", message=".*does not support bfloat16 compilation natively.*")
 warnings.filterwarnings("ignore", message=".*'pin_memory' argument is set as true but no accelerator is found.*")
+
+
+load_dotenv()
+REWARD_MODEL_BASE = os.getenv("REWARD_MODEL_BASE")
+if not REWARD_MODEL_BASE:
+    raise ValueError("Missing `REWARD_MODEL_BASE` env var. Please set it in your .env file.")
 
 
 def load_preference_dataset() -> Dataset:
