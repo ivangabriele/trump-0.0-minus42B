@@ -1,6 +1,8 @@
 import argparse
-from typing import List, Optional, Tuple
+import readline  # noqa: F401 - We import readline to enable line editing features in the terminal.
 import random
+from typing import List, Optional, Tuple
+
 
 from _types.database_types import DatabasePost
 from libs import clean_post_text_with_llm, database, preference_dataset_manager
@@ -32,7 +34,7 @@ def _collect_human_feedback(post: DatabasePost, sample_size: int, sample_index: 
         if not post.raw_text:
             return None
 
-        proposed_text = clean_post_text_with_llm(post.raw_text, attempt=attempt)
+        proposed_text = clean_post_text_with_llm(post.raw_text, temperature_modifier=attempt)
         utils.print_horizontal_line("━", f"GENERATOR LLM PROPOSAL {attempt + 1}")
         print(proposed_text)
 
@@ -50,7 +52,8 @@ def _collect_human_feedback(post: DatabasePost, sample_size: int, sample_index: 
         elif choice == "n":
             print("❌ Rejected.")
 
-            rejected_texts.append(proposed_text)
+            if not rejected_texts or proposed_text != rejected_texts[-1]:
+                rejected_texts.append(proposed_text)
         else:
             print("⭕ Skipped.")
             utils.print_horizontal_line("═")
@@ -89,13 +92,12 @@ def main():
 
         accepted_text, rejected_texts = result
         post_id = utils.generate_post_id(post.date, post.raw_text)
-        if accepted_text:
-            if rejected_texts:
-                preference_dataset.comparison_pairs.append(
-                    PreferenceDatasetComparisonPair(
-                        id=post_id, input=post.raw_text, accepted=accepted_text, rejected=rejected_texts
-                    )
+        if rejected_texts:
+            preference_dataset.comparison_pairs.append(
+                PreferenceDatasetComparisonPair(
+                    id=post_id, input=post.raw_text, accepted=accepted_text, rejected=rejected_texts
                 )
+            )
 
     preference_dataset_manager.write(preference_dataset)
 
