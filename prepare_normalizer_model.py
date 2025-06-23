@@ -103,7 +103,7 @@ def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
 
 
 def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokenizer: Any):
-    utils.print_horizontal_line("━", "Generator Model Training")
+    utils.print_horizontal_line("━", "Normalizer Model Training")
 
     # Load the causal LM model (policy) with potential half-precision and device mapping
     model_kwargs = {
@@ -189,10 +189,11 @@ def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokeni
 
 
 def main():
-    tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE, padding_side="left", trust_remote_code=False)
-    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
-    # if tokenizer.chat_template is None:
-    #     tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
+    utils.print_horizontal_line("━", "Tokenizer Loading")
+    tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE, padding_side="right", trust_remote_code=False)
+    # Add a padding token if not already present (especially for GPT/OPT models)
+    if tokenizer.pad_token_id is None:
+        tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
     train_dataset, eval_dataset = load_preference_dataset(tokenizer)
     train_normalizer_model(train_dataset, eval_dataset, tokenizer)

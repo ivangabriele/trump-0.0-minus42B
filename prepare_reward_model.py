@@ -51,12 +51,12 @@ def load_preference_dataset() -> Dataset:
 
 
 def train_reward_model(reward_dataset: Dataset):
-    print(f"Info: Loading base model `{REWARD_MODEL_BASE}` and tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(REWARD_MODEL_BASE)
+    utils.print_horizontal_line("━", "Tokenizer Loading")
+    tokenizer = AutoTokenizer.from_pretrained(REWARD_MODEL_BASE, padding_side="right", trust_remote_code=False)
     # Add a padding token if not already present (especially for GPT/OPT models)
     if tokenizer.pad_token_id is None:
         tokenizer.add_special_tokens({"pad_token": "[PAD]"})
-    tokenizer.padding_side = "right"  # pad on the right for training:contentReference[oaicite:11]{index=11}
+
     # Load the model with a classification head for a single reward score output
     base_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_BASE,
