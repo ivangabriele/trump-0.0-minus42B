@@ -3,11 +3,13 @@ from datasets import Dataset
 from dotenv import load_dotenv
 import os
 import warnings
+from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from trl import RewardTrainer, RewardConfig  # Hugging Face TRL for reward modeling
 
 from libs import preference_dataset_manager
 from constants import PREFERENCE_DATASET_PATH
+from prepare_common import LORA_CONFIG, QUANTIZATION_CONFIG
 import utils
 
 
@@ -57,11 +59,15 @@ def train_reward_model(args, reward_dataset: Dataset):
         tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     tokenizer.padding_side = "right"  # pad on the right for training:contentReference[oaicite:11]{index=11}
     # Load the model with a classification head for a single reward score output
-    model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_name_or_path, num_labels=1, trust_remote_code=False
+    base_model = AutoModelForSequenceClassification.from_pretrained(
+        args.model_name_or_path,
+        num_labels=1,  # single-logit reward head
+        quantization_config=QUANTIZATION_CONFIG,  # 4-bit load
+        trust_remote_code=False,
     )
     # Resize model embeddings in case new tokens were added to the tokenizer
-    model.resize_token_embeddings(len(tokenizer))
+    base_model.resize_token_embeddings(len(tokenizer))
+    model = get_peft_model(base_model, LORA_CONFIG)
 
     training_args = RewardConfig(
         output_dir=args.output_dir,
