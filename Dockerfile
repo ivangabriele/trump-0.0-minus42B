@@ -11,6 +11,7 @@ RUN apt-get install -y \
   git \
   git-lfs \
   htop \
+  openssh-client \
   procps \
   python-is-python3 \
   python3 \
@@ -37,6 +38,10 @@ SHELL ["/usr/bin/bash", "-c"]
 
 ENV CUDA_HOME="/usr/local/cuda"
 ENV PATH="${CUDA_HOME}/bin:${PATH}"
+
+COPY --chown=ubuntu ./scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 700 /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # `7860` is the default port for Hugging Face Spaces running on Docker
 # https://huggingface.co/docs/hub/en/spaces-config-reference
