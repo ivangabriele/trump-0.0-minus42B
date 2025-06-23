@@ -68,16 +68,16 @@ def train_reward_model(reward_dataset: Dataset, tokenizer: Any):
     model = get_peft_model(base_model, LORA_CONFIG)
 
     training_args = RewardConfig(
-        output_dir=REWARD_MODEL_PATH,
-        learning_rate=3e-6,
-        num_train_epochs=3,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=1,
-        logging_steps=10,
-        save_strategy="epoch",
         eval_strategy="no",  # no evaluation during training (only training dataset is used)
-        remove_unused_columns=False,  # do not drop dataset columns (use custom collator for chosen/rejected)
+        gradient_accumulation_steps=1,
+        learning_rate=3e-6,
+        logging_steps=10,
         max_length=512,  # max sequence length for tokenizer (truncation length)
+        num_train_epochs=3,
+        output_dir=REWARD_MODEL_PATH,
+        per_device_train_batch_size=1,
+        remove_unused_columns=False,  # do not drop dataset columns (use custom collator for chosen/rejected)
+        save_strategy="epoch",
     )
     trainer = RewardTrainer(
         model=model,

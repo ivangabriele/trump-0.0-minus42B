@@ -61,6 +61,15 @@ class _Database:
 
         return [DatabasePost(id=row[0], date=row[1], raw_text=row[2], clean_text=row[3]) for row in rows]
 
+    def has_post_with_raw_text(self, raw_text: str) -> bool:
+        cursor = self._connection.cursor()
+
+        cursor.execute("SELECT 1 FROM posts WHERE raw_text = ?", (raw_text,))
+        exists = cursor.fetchone() is not None
+        cursor.close()
+
+        return exists
+
     def insert_posts(self, posts: List[DatabasePost]) -> None:
         cursor = self._connection.cursor()
 
@@ -72,14 +81,16 @@ class _Database:
         self._connection.commit()
         cursor.close()
 
-    def has_post_with_raw_text(self, raw_text: str) -> bool:
+    def update_posts(self, posts: List[DatabasePost]) -> None:
         cursor = self._connection.cursor()
 
-        cursor.execute("SELECT 1 FROM posts WHERE raw_text = ?", (raw_text,))
-        exists = cursor.fetchone() is not None
-        cursor.close()
+        cursor.executemany(
+            "UPDATE posts SET clean_text = ? WHERE id = ?",
+            [(post.clean_text, post.id) for post in posts],
+        )
 
-        return exists
+        self._connection.commit()
+        cursor.close()
 
 
 database = _Database()
