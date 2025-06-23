@@ -90,7 +90,7 @@ def _nornalize_punctuation_chars(post: JsonPost) -> JsonPost:
         return post
 
     post_raw_text = post_raw_text.replace("…", "...")
-    post_raw_text = post_raw_text.replace("’", "'")
+    post_raw_text = re.sub(r"[‘’]", "'", post_raw_text)
     post_raw_text = re.sub(r"[“”]", '"', post_raw_text)
     # Figure dash, em dash, en dash, horizontal bar => en dash
     post_raw_text = re.sub(r"[‒—–―]", "–", post_raw_text)
