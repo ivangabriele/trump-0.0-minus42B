@@ -49,10 +49,6 @@ class _GeneratorPromptConfig(BaseModel):
     examples: List[_GeneratorPromptConfigExample]
 
 
-_TOP_K = 50
-_TOP_P = 0.9
-
-
 class PostNormalizer:
     _instruction_lines: List[str]
     _model: PreTrainedModel | GenerationMixin
@@ -78,7 +74,6 @@ class PostNormalizer:
             do_sample=False,  # Disable sampling for deterministic output
             num_beams=1,  # Greedy search
             renormalize_logits=False,
-            temperature=1.0,
         )
         output_tokens = self._model.generate(**inputs, max_new_tokens=512, generation_config=generation_config)  # type: ignore[operator]
 
