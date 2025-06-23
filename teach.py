@@ -9,9 +9,6 @@ from libs import database, PostNormalizer, preference_dataset_manager
 from _types.generator_types import PreferenceDatasetComparisonPair
 import utils
 
-# Configuration
-_MAX_ATTEMPTS = 3
-
 
 def _collect_human_feedback(
     post_normalizer: PostNormalizer, post: DatabasePost, sample_size: int, sample_index: int
@@ -32,35 +29,31 @@ def _collect_human_feedback(
     utils.print_horizontal_line("═", "ORIGINAL TEXT")
     print(post.raw_text)
 
-    for attempt in range(_MAX_ATTEMPTS):
-        if not post.raw_text:
-            return None
+    proposed_text = post_normalizer.normalize(post.raw_text)
+    utils.print_horizontal_line("━", "GENERATOR LLM PROPOSAL")
+    print(proposed_text)
 
-        proposed_text = post_normalizer.normalize(post.raw_text, temperature_modifier=attempt)
-        utils.print_horizontal_line("━", f"GENERATOR LLM PROPOSAL {attempt + 1}")
-        print(proposed_text)
+    print("")
+    print("> Accept? Press [y] (yes), [n] (no) or [s] (skip)... ", end="", flush=True)
+    choice = utils.get_input_key()
+    print("\r" + " " * 80, end="", flush=True)
+    print("\r", end="", flush=True)
 
-        print("")
-        print("> Accept? Press [y] (yes), [n] (no) or [s] (skip)... ", end="", flush=True)
-        choice = utils.get_input_key()
-        print("\r" + " " * 80, end="", flush=True)
-        print("\r", end="", flush=True)
+    if choice == "y":
+        print("✔️ Accepted.")
+        utils.print_horizontal_line("═")
 
-        if choice == "y":
-            print("✔️ Accepted.")
-            utils.print_horizontal_line("═")
+        return proposed_text, rejected_texts
+    elif choice == "n":
+        print("❌ Rejected.")
 
-            return proposed_text, rejected_texts
-        elif choice == "n":
-            print("❌ Rejected.")
+        if not rejected_texts or proposed_text != rejected_texts[-1]:
+            rejected_texts.append(proposed_text)
+    else:
+        print("⭕ Skipped.")
+        utils.print_horizontal_line("═")
 
-            if not rejected_texts or proposed_text != rejected_texts[-1]:
-                rejected_texts.append(proposed_text)
-        else:
-            print("⭕ Skipped.")
-            utils.print_horizontal_line("═")
-
-            return None
+        return None
 
     utils.print_horizontal_line("━", "HUMAN PROPOSAL")
     expected_text = input("> ").strip()

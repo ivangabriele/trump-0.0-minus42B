@@ -41,7 +41,6 @@ class _GeneratorPromptConfig(BaseModel):
     examples: List[_GeneratorPromptConfigExample]
 
 
-_TEMPERATURE_INCREMENT = 0.1
 _TOP_K = 50
 _TOP_P = 0.9
 
@@ -55,7 +54,7 @@ class PostNormalizer:
         self._init_instruction_lines()
         self._init_model()
 
-    def normalize(self, text: str, temperature_modifier: int = 0) -> str:
+    def normalize(self, text: str) -> str:
         if not text or not text.strip():
             return ""
 
@@ -68,10 +67,10 @@ class PostNormalizer:
         inputs = self._tokenizer(formatted_prompt, return_tensors="pt").to(self._model.device)  # type: ignore[union-attr]
 
         generation_config = GenerationConfig(
-            do_sample=True,
+            do_sample=False,  # Disable sampling for deterministic output
             num_beams=1,  # Greedy search
             renormalize_logits=False,
-            temperature=_TEMPERATURE_INCREMENT * (temperature_modifier + 1),
+            temperature=1.0,
             top_k=_TOP_K,
             top_p=_TOP_P,
         )
