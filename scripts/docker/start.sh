@@ -30,11 +30,9 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
 
   # Accept GitHub & HF Hub host keys to avoid the first-time prompt
   ssh-keyscan github.com hf.co >> "${HOME}/.ssh/known_hosts" 2>/dev/null
-
-  # Global Git identity
   git config --global user.name  "${GIT_USER_NAME}"
   git config --global user.email "${GIT_USER_EMAIL}"
-
+  git config --global init.defaultBranch main
   # Tell Git which key to use *without* having to run ssh-agent
   export GIT_SSH_COMMAND="ssh -i ${HOME}/.ssh/id_ed25519 -o IdentitiesOnly=yes"
 
