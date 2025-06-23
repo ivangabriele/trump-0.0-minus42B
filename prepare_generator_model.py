@@ -1,3 +1,4 @@
+import math
 from accelerate import PartialState
 import argparse
 from datasets import Dataset, NamedSplit
@@ -64,17 +65,14 @@ def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:
     #     name=None,
     #     split="descriptiveness",
     # )  # type: ignore
-    normalized_dataset = normalized_dataset.select(range(0, 100))
     print(f"Info: Prepared dataset with {len(normalized_dataset)} preference comparisons.")
     # print(normalized_dataset[:2])
 
-    # eval_dataset_length = math.floor(len(normalized_dataset) / 2)
-    eval_dataset_length = 2
-    train_dataset = normalized_dataset.select(range(0, eval_dataset_length))
-    eval_dataset = normalized_dataset.select(range(eval_dataset_length, eval_dataset_length * 2))
-    eval_samples = 50
-    train_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_samples))
-    eval_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_samples, len(normalized_dataset)))
+    eval_dataset_length = math.floor(len(normalized_dataset) / 2)
+    train_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_dataset_length))
+    eval_dataset = normalized_dataset.select(
+        range(len(normalized_dataset) - eval_dataset_length, len(normalized_dataset))
+    )
     print(f"Info: Split dataset into {len(train_dataset)} training and {len(eval_dataset)} evaluation samples.")
 
     def prepare_dataset(dataset, tokenizer):
