@@ -29,12 +29,15 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
 
   # ---
 
-  echo "Info: Configuring Git remote URL for /app…"
+  echo "Info: Setting up Git for /app…"
+  sleep 1  # Ensure the directory is ready
   rm -fr /app/.git
+  sleep 1  # Ensure the directory is ready
   git init /app
   git lfs install /app
-  git -C /app remote add origin "${GIT_REMOTE_URL}"
-  echo "Info: Git remote URL set to ${GIT_REMOTE_URL}".
+  git -C /app remote add hf "${GIT_REMOTE_URL}"
+  git fetch hf
+  echo "Info: Git setup complete for /app."
 fi
 
 make serve
