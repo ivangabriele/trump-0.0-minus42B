@@ -7,8 +7,8 @@ teach:
 prepare:
 	python prepare_reward_model.py
 	python prepare_normalizer_model.py
-generate:
-	python generate.py
+normalize:
+	python normalize.py
 tune:
 	python tune.py
 train:

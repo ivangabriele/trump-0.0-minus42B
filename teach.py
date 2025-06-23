@@ -30,7 +30,7 @@ def _collect_human_feedback(
     print(post.raw_text)
 
     proposed_text = post_normalizer.normalize(post.raw_text)
-    utils.print_horizontal_line("━", "GENERATOR LLM PROPOSAL")
+    utils.print_horizontal_line("━", "UNTRAINED MODEL PROPOSAL")
     print(proposed_text)
 
     print("")

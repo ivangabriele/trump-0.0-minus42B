@@ -1,6 +1,6 @@
 DOWNLOAD_API_URL = "https://api.factsquared.com/json/factba.se-trump-social.php"
 
-NORMALIZER_PROMPT_CONFIG_PATH = "generator_prompt.yml"
+NORMALIZER_PROMPT_CONFIG_PATH = "normalizer_prompt.yml"
 
 POSTS_DATA_DIR_PATH = "data/posts"
 # Human (Feedback) Preference Dataset

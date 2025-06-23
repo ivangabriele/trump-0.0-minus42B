@@ -32,9 +32,9 @@ Arguably the dumbest Large Language Model ever created.
 - [Local Run \& Development](#local-run--development)
   - [Getting started](#getting-started)
   - [1. Download Trump's social media posts](#1-download-trumps-social-media-posts)
-  - [2. Teach the Generator LLM Preference Dataset](#2-teach-the-generator-llm-preference-dataset)
-  - [3. Prepare the Generator LLM](#3-prepare-the-generator-llm)
-  - [4. Generate the training data](#4-generate-the-training-data)
+  - [2. Teach the Normalization Preference Dataset](#2-teach-the-normalization-preference-dataset)
+  - [3. Prepare the Normalizer Model](#3-prepare-the-normalizer-model)
+  - [4. Normalize the training data](#4-normalize-the-training-data)
   - [5. Train Trump LLM](#5-train-trump-llm)
     - [From a pre-trained model](#from-a-pre-trained-model)
     - [From scratch](#from-scratch)
@@ -94,11 +94,11 @@ training (e.g. images, videos, etc.).
 make download
 ```
 
-### 2. Teach the Generator LLM Preference Dataset
+### 2. Teach the Normalization Preference Dataset
 
 This script generates a human preference (feedback) dataset (`data/preference.json`) using your RLHF to select or
 provide the best normalized output for each post. The model used for this step is prepped with a preliminary fwe-shot
-prompt living in `generator_prompt.json`.
+prompt living in `normalizer_prompt.json`.
 
 As a human, you're asked to select the best normalized output for each post, or provide your own if none is
 satisfactory. You can also skip posts if they're not relevant and should be filtered out.
@@ -146,27 +146,25 @@ RT @MTG: The Gulf of America!
 ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 ```
 
-### 3. Prepare the Generator LLM
+### 3. Prepare the Normalizer Model
 
 _In progress: working on PPO._
 
-This script builds the Generator LLM by fine-tuning a pre-trained model using the previously generated human preference
-and apllying RLHF techniques, such as RM and PPO, to optimize the Generator LLM for post text normalization.
+This script builds the Normalizer Model by fine-tuning a pre-trained model using the previously generated human preference
+and apllying RLHF techniques, such as RM and PPO, to optimize the Normalizer Model for post text normalization.
 
 ```sh
 make prepare
 ```
 
-### 4. Generate the training data
+### 4. Normalize the training data
 
-_Not ready yet!_
-
-This script normalizes the posts using the custom Generator LLM and update them in the local SQLite database
+This script normalizes the posts using the custom Normalizer Model and update them in the local SQLite database
 `data/posts.db`.
 
 
 ```sh
-make generate
+make normalize
 ```
 
 ### 5. Train Trump LLM
