@@ -24,6 +24,7 @@ dependencies = [
   "selenium==4.33.0",
   # https://github.com/huggingface/trl/issues/2377#issuecomment-2503234915
   # "torch==2.7.1",
+  "sentencepiece==0.2.0",
   "torch==2.4.*",
   "tqdm==4.67.1",
   # https://github.com/huggingface/trl/issues/2377#issuecomment-2503234915
