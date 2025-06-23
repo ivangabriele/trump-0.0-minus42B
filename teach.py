@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 
 
 from _types.database_types import DatabasePost
-from libs import clean_post_text_with_llm, database, preference_dataset_manager
+from libs import database, PostNormalizer, preference_dataset_manager
 from _types.generator_types import PreferenceDatasetComparisonPair
 import utils
 
@@ -13,7 +13,9 @@ import utils
 _MAX_ATTEMPTS = 3
 
 
-def _collect_human_feedback(post: DatabasePost, sample_size: int, sample_index: int) -> Optional[Tuple[str, List[str]]]:
+def _collect_human_feedback(
+    post_normalizer: PostNormalizer, post: DatabasePost, sample_size: int, sample_index: int
+) -> Optional[Tuple[str, List[str]]]:
     rejected_texts: List[str] = []
 
     print("")
@@ -34,7 +36,7 @@ def _collect_human_feedback(post: DatabasePost, sample_size: int, sample_index: 
         if not post.raw_text:
             return None
 
-        proposed_text = clean_post_text_with_llm(post.raw_text, temperature_modifier=attempt)
+        proposed_text = post_normalizer.normalize(post.raw_text, temperature_modifier=attempt)
         utils.print_horizontal_line("━", f"GENERATOR LLM PROPOSAL {attempt + 1}")
         print(proposed_text)
 
@@ -85,8 +87,10 @@ def main():
     sampled_posts = random.sample(filtered_posts, args.sample_size)
     print(f"Info: Loaded a ramdom sample of {len(sampled_posts)} posts.")
 
+    post_normalizer = PostNormalizer()
+
     for sample_index, post in enumerate(sampled_posts):
-        result = _collect_human_feedback(post, args.sample_size, sample_index)
+        result = _collect_human_feedback(post_normalizer, post, args.sample_size, sample_index)
         if result is None:
             continue
 
