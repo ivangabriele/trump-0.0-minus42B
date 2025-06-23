@@ -5,6 +5,7 @@ import warnings
 from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from trl import RewardTrainer, RewardConfig  # Hugging Face TRL for reward modeling
+from typing import Any
 
 from libs import preference_dataset_manager
 from constants import PREFERENCE_DATASET_PATH
@@ -27,7 +28,8 @@ if not REWARD_MODEL_PATH:
 
 
 def load_preference_dataset() -> Dataset:
-    utils.print_horizontal_line("━", "Preference Dataset Loading")
+    utils.print_horizontal_line("═", "Preference Dataset")
+
     preference_dataset = preference_dataset_manager.read()
     num_pairs = len(preference_dataset.comparison_pairs)
     print(f"Info: Loaded Preference Dataset with {num_pairs} comparison pairs from `{PREFERENCE_DATASET_PATH}`.")
@@ -50,12 +52,10 @@ def load_preference_dataset() -> Dataset:
     return reward_dataset
 
 
-def train_reward_model(reward_dataset: Dataset):
-    utils.print_horizontal_line("━", "Tokenizer Loading")
-    tokenizer = AutoTokenizer.from_pretrained(REWARD_MODEL_BASE, padding_side="right", trust_remote_code=False)
-    # Add a padding token if not already present (especially for GPT/OPT models)
-    if tokenizer.pad_token_id is None:
-        tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+def train_reward_model(reward_dataset: Dataset, tokenizer: Any):
+    utils.print_horizontal_line("═", "Normalizer Model Training")
+
+    utils.print_horizontal_line("─", "Model Base")
 
     # Load the model with a classification head for a single reward score output
     base_model = AutoModelForSequenceClassification.from_pretrained(
@@ -64,8 +64,7 @@ def train_reward_model(reward_dataset: Dataset):
         quantization_config=QUANTIZATION_CONFIG,  # 4-bit load
         trust_remote_code=False,
     )
-    # Resize model embeddings in case new tokens were added to the tokenizer
-    base_model.resize_token_embeddings(len(tokenizer))
+
     model = get_peft_model(base_model, LORA_CONFIG)
 
     training_args = RewardConfig(
@@ -87,20 +86,27 @@ def train_reward_model(reward_dataset: Dataset):
         processing_class=tokenizer,  # tokenizer will handle processing (tokenization & padding) of 'chosen'/'rejected'
     )
 
-    utils.print_horizontal_line("━", "Reward Model Training")
+    utils.print_horizontal_line("─", "RLHF Fine-Tuning")
+
     trainer.train()
 
-    print("Info: Training complete. Saving reward model to disk...")
+    utils.print_horizontal_line("─", "Model & Tokenizer Saving")
+
     trainer.save_model()  # saves the model to output_dir
     tokenizer.save_pretrained(REWARD_MODEL_PATH)  # save tokenizer (including new pad token) to output_dir
-    print(
-        f"Info: Reward model saved to `{REWARD_MODEL_PATH}`. You can now use this model for PPO fine-tuning or inference."
-    )
+    print(f"Info: Reward model saved to `{REWARD_MODEL_PATH}`.")
 
 
 def main():
+    utils.print_horizontal_line("─", "Tokenizer Loading")
+
+    tokenizer = AutoTokenizer.from_pretrained(REWARD_MODEL_BASE, padding_side="right", trust_remote_code=False)
+    # Add a padding token if not already present (especially for GPT/OPT models)
+    if tokenizer.pad_token_id is None:
+        tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+
     reward_dataset = load_preference_dataset()
-    train_reward_model(reward_dataset)
+    train_reward_model(reward_dataset, tokenizer)
     utils.print_horizontal_line("═")
 
 

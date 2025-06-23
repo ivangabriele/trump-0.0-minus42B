@@ -35,13 +35,12 @@ if not REWARD_MODEL_PATH:
 
 
 def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
-    utils.print_horizontal_line("━", "Preference Dataset Loading")
+    utils.print_horizontal_line("═", "Preference Dataset")
 
     preference_dataset = preference_dataset_manager.read()
     num_pairs = len(preference_dataset.comparison_pairs)
     print(f"Info: Loaded Preference Dataset with {num_pairs} comparison pairs from `{PREFERENCE_DATASET_PATH}`.")
 
-    print("Info: Converting preference data to Reward Model training format...")
     normalized_dataset_pairs: PpoDataset = []
     for item in preference_dataset.comparison_pairs:
         normalized_dataset_pairs.append(
@@ -60,13 +59,7 @@ def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
     normalized_dataset = Dataset.from_list(
         [pair.model_dump() for pair in normalized_dataset_pairs], split=NamedSplit("descriptiveness")
     )
-    # normalized_dataset: Dataset = load_dataset(
-    #     "trl-internal-testing/descriptiveness-sentiment-trl-style",
-    #     name=None,
-    #     split="descriptiveness",
-    # )  # type: ignore
     print(f"Info: Prepared dataset with {len(normalized_dataset)} preference comparisons.")
-    # print(normalized_dataset[:2])
 
     eval_dataset_length = math.floor(len(normalized_dataset) / 2)
     train_dataset = normalized_dataset.select(range(len(normalized_dataset) - eval_dataset_length))
@@ -90,7 +83,6 @@ def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
             tokenize,
             batched=True,
             remove_columns=dataset.column_names,
-            # num_proc=training_args.dataset_num_proc,
         )
 
     # Compute that only on the main process for faster data processing.
@@ -103,7 +95,9 @@ def load_preference_dataset(tokenizer: Any) -> Tuple[Dataset, Dataset]:
 
 
 def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokenizer: Any):
-    utils.print_horizontal_line("━", "Normalizer Model Training")
+    utils.print_horizontal_line("═", "Normalizer Model Training")
+
+    utils.print_horizontal_line("─", "Model Base")
 
     # Load the causal LM model (policy) with potential half-precision and device mapping
     model_kwargs = {
@@ -113,12 +107,11 @@ def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokeni
         "trust_remote_code": False,
     }
     base_model = AutoModelForCausalLM.from_pretrained(NORMALIZER_MODEL_BASE, **model_kwargs)
-    # If new tokens were added to the tokenizer, resize model embeddings
-    # base_model.resize_token_embeddings(len(tokenizer))
+
     model = get_peft_model(base_model, LORA_CONFIG)
 
-    # Load the reward model and value model
-    print(f"Info: Loading reward model from `{REWARD_MODEL_PATH}`...")
+    utils.print_horizontal_line("─", "Reward Model")
+
     reward_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_PATH,
         device_map="auto",
@@ -126,10 +119,9 @@ def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokeni
         quantization_config=QUANTIZATION_CONFIG,  # no quantization for the normalizer model
         trust_remote_code=False,
     )
-    # Ensure the reward model has the pad token embeddings if needed
-    if tokenizer.pad_token_id is not None and hasattr(reward_model, "resize_token_embeddings"):
-        reward_model.resize_token_embeddings(len(tokenizer))
-    # Initialize the value model (critic) with same architecture as reward model (sequence classification, 1 output)
+
+    utils.print_horizontal_line("─", "Value Model")
+
     value_model = AutoModelForSequenceClassification.from_pretrained(
         REWARD_MODEL_PATH,
         device_map="auto",
@@ -137,8 +129,6 @@ def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokeni
         quantization_config=QUANTIZATION_CONFIG,  # no quantization for the normalizer model
         trust_remote_code=False,
     )
-    if tokenizer.pad_token_id is not None and hasattr(value_model, "resize_token_embeddings"):
-        value_model.resize_token_embeddings(len(tokenizer))
 
     # Set up PPO training configuration using PPOConfig
     ppo_config = PPOConfig(
@@ -171,25 +161,24 @@ def train_normalizer_model(train_dataset: Dataset, eval_dataset: Dataset, tokeni
         peft_config=LORA_CONFIG,
     )
 
-    # Train the normalizer model with PPO
-    print("Info: Starting PPO fine-tuning...")
+    utils.print_horizontal_line("─", "PPO Fine-Tuning")
+
     try:
         ppo_trainer.train()
     finally:
         # skip any error
         print("Info: PPO training completed (or interrupted).")
 
-    # Save the fine-tuned model and tokenizer
-    print("Info: PPO training complete. Saving the normalizer model...")
+    utils.print_horizontal_line("─", "Model & Tokenizer Saving")
+
     ppo_trainer.save_model(NORMALIZER_MODEL_PATH)  # save the policy model (with LoRA adapters if any)
     tokenizer.save_pretrained(NORMALIZER_MODEL_PATH)  # save tokenizer (including added tokens) to output_dir
-    print(
-        f"Info: Generator model saved to `{NORMALIZER_MODEL_PATH}`. You can use this model for inference or further training."
-    )
+    print(f"Info: Generator model saved to `{NORMALIZER_MODEL_PATH}`.")
 
 
 def main():
-    utils.print_horizontal_line("━", "Tokenizer Loading")
+    utils.print_horizontal_line("─", "Tokenizer Loading")
+
     tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE, padding_side="right", trust_remote_code=False)
     # Add a padding token if not already present (especially for GPT/OPT models)
     if tokenizer.pad_token_id is None:
