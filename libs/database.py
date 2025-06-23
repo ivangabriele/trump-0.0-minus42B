@@ -81,6 +81,17 @@ class _Database:
         self._connection.commit()
         cursor.close()
 
+    def update_post(self, post: DatabasePost) -> None:
+        cursor = self._connection.cursor()
+
+        cursor.execute(
+            "UPDATE posts SET clean_text = ? WHERE id = ?",
+            (post.clean_text, post.id),
+        )
+
+        self._connection.commit()
+        cursor.close()
+
     def update_posts(self, posts: List[DatabasePost]) -> None:
         cursor = self._connection.cursor()
 

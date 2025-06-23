@@ -9,6 +9,8 @@ prepare:
 	python prepare_normalizer_model.py
 normalize:
 	python normalize.py
+normalize-force:
+	python normalize.py --force
 tune:
 	python tune.py
 train:

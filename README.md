@@ -162,6 +162,14 @@ This script normalizes the posts using the fine-tuned Normalizer Model and updat
 make normalize
 ```
 
+or
+
+```sh
+make normalize-force
+```
+
+to force the normalization of all posts, even if they have already been normalized.
+
 ### 5. Train Trump LLM
 
 You have 2 choices here:
