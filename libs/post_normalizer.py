@@ -1,13 +1,14 @@
-import warnings
+from copy import copy
 from os import path
-from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from pydantic_yaml import parse_yaml_raw_as
-from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.generation.configuration_utils import GenerationConfig
 from transformers.generation.utils import GenerationMixin
+from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.modeling_utils import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+from typing import List, Optional
+import warnings
 
 from constants import GENERATOR_MODEL, GENERATOR_PROMPT_CONFIG_PATH
 from .database import database
@@ -137,7 +138,7 @@ class PostNormalizer:
         self._model = model
 
     def _get_cleaning_prompt(self, raw_text: str) -> str:
-        prompt_lines = self._instruction_lines
+        prompt_lines = copy(self._instruction_lines)
         prompt_lines.extend(
             [
                 "---",
