@@ -1,7 +1,7 @@
 import json
 from os import path
 
-from _types.generator_types import PreferenceDataset
+from _types.normalizer_types import PreferenceDataset
 from constants import PREFERENCE_DATASET_PATH
 
 

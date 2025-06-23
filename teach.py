@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 from _types.database_types import DatabasePost
 from libs import database, PostNormalizer, preference_dataset_manager
-from _types.generator_types import PreferenceDatasetComparisonPair
+from _types.normalizer_types import PreferenceDatasetComparisonPair
 import utils
 
 
