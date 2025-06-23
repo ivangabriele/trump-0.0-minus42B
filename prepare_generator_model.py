@@ -1,21 +1,31 @@
-import argparse
-from typing import Any, Tuple
-import warnings
-import torch
-
 from accelerate import PartialState
+import argparse
+from datasets import Dataset, NamedSplit
+from dotenv import load_dotenv
+import os
+import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification
 from trl import PPOTrainer, PPOConfig
-from datasets import Dataset, NamedSplit
+from typing import Any, Tuple
+import warnings
+
 
 from _types.generator_types import PpoDataset, PpoDatasetPair, PpoDatasetPick
 from libs import preference_dataset_manager
-from constants import GENERATOR_MODEL, GENERATOR_MODEL_DIR_PATH, PREFERENCE_DATASET_PATH, REWARD_MODEL_DIR_PATH
+from constants import NORMALIZER_MODEL_PATH, PREFERENCE_DATASET_PATH, REWARD_MODEL_PATH
 import utils
 
-# Suppress specific benign warnings (e.g., bf16 not natively compiled, pin_memory on CPU)
+
+# Filter out specific torch warnings that can be safely ignored.
 warnings.filterwarnings("ignore", message=".*does not support bfloat16 compilation natively.*")
 warnings.filterwarnings("ignore", message=".*'pin_memory' argument is set as true but no accelerator is found.*")
+
+
+load_dotenv()
+load_dotenv()
+NORMALIZER_MODEL_BASE = os.getenv("NORMALIZER_MODEL_BASE")
+if not NORMALIZER_MODEL_BASE:
+    raise ValueError("Missing `NORMALIZER_MODEL_BASE` env var. Please set it in your .env file.")
 
 
 def load_preference_dataset(args, tokenizer: Any) -> Tuple[Dataset, Dataset]:
@@ -103,14 +113,14 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
     model_kwargs["device_map"] = "auto"
     # Use eager attention implementation if supported (helps on some GPUs):contentReference[oaicite:47]{index=47}
     model_kwargs["attn_implementation"] = "eager"
-    model = AutoModelForCausalLM.from_pretrained(GENERATOR_MODEL, **model_kwargs)
+    model = AutoModelForCausalLM.from_pretrained(NORMALIZER_MODEL_BASE, **model_kwargs)
     # If new tokens were added to the tokenizer, resize model embeddings
     # model.resize_token_embeddings(len(tokenizer))
 
     # Load the reward model and value model
-    print(f"Info: Loading reward model from `{REWARD_MODEL_DIR_PATH}`...")
+    print(f"Info: Loading reward model from `{REWARD_MODEL_PATH}`...")
     reward_model = AutoModelForSequenceClassification.from_pretrained(
-        REWARD_MODEL_DIR_PATH,
+        REWARD_MODEL_PATH,
         num_labels=1,
         trust_remote_code=False,
         **({"torch_dtype": "torch.bfloat16"} if args.bf16 else {}),
@@ -120,7 +130,7 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
         reward_model.resize_token_embeddings(len(tokenizer))
     # Initialize the value model (critic) with same architecture as reward model (sequence classification, 1 output)
     value_model = AutoModelForSequenceClassification.from_pretrained(
-        REWARD_MODEL_DIR_PATH,
+        REWARD_MODEL_PATH,
         num_labels=1,
         trust_remote_code=False,
         **({"torch_dtype": "torch.bfloat16"} if args.bf16 else {}),
@@ -140,13 +150,13 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
         # num_ppo_epochs=4,
         # Encourage model to properly end sequences by penalizing missing EOS
         missing_eos_penalty=1.0,
-        reward_model_path=REWARD_MODEL_DIR_PATH,
+        reward_model_path=REWARD_MODEL_PATH,
         # fp16=False,
         # bf16=False,
         # no_cuda=False,
         seed=42,
         # save_strategy="steps",  # save at the end of each epoch
-        output_dir=GENERATOR_MODEL_DIR_PATH,
+        output_dir=NORMALIZER_MODEL_PATH,
     )
     # Note: PPOConfig will internally compute total episodes based on num_train_epochs and dataset length:contentReference[oaicite:50]{index=50}.
 
@@ -173,10 +183,10 @@ def train_generator_model(args, train_dataset: Dataset, eval_dataset: Dataset, t
 
     # Save the fine-tuned model and tokenizer
     print("Info: PPO training complete. Saving the generator model...")
-    ppo_trainer.save_model(GENERATOR_MODEL_DIR_PATH)  # save the policy model (with LoRA adapters if any)
-    tokenizer.save_pretrained(GENERATOR_MODEL_DIR_PATH)  # save tokenizer (including added tokens) to output_dir
+    ppo_trainer.save_model(NORMALIZER_MODEL_PATH)  # save the policy model (with LoRA adapters if any)
+    tokenizer.save_pretrained(NORMALIZER_MODEL_PATH)  # save tokenizer (including added tokens) to output_dir
     print(
-        f"Info: Generator model saved to `{GENERATOR_MODEL_DIR_PATH}`. You can use this model for inference or further training."
+        f"Info: Generator model saved to `{NORMALIZER_MODEL_PATH}`. You can use this model for inference or further training."
     )
 
 
@@ -187,19 +197,19 @@ def main():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default=GENERATOR_MODEL,
+        default=NORMALIZER_MODEL_BASE,
         help="HuggingFace model name or path for the base generator model (e.g., 'facebook/opt-125m').",
     )
     parser.add_argument(
         "--reward_model_path",
         type=str,
-        default=REWARD_MODEL_DIR_PATH,
+        default=REWARD_MODEL_PATH,
         help="Path to the pretrained reward model to use for computing rewards (e.g., 'models/reward').",
     )
     parser.add_argument(
         "--output_dir",
         type=str,
-        default=GENERATOR_MODEL_DIR_PATH,
+        default=NORMALIZER_MODEL_PATH,
         help="Directory to save the PPO fine-tuned generator model.",
     )
     parser.add_argument("--learning_rate", type=float, default=3e-6, help="Learning rate for PPO fine-tuning.")
@@ -242,7 +252,7 @@ def main():
     )
     args = parser.parse_args()
 
-    tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL, padding_side="left", trust_remote_code=False)
+    tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE, padding_side="left", trust_remote_code=False)
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     # if tokenizer.chat_template is None:
     #     tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE

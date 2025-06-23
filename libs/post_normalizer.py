@@ -1,4 +1,6 @@
 from copy import copy
+from dotenv import load_dotenv
+import os
 from os import path
 from pydantic import BaseModel, ConfigDict
 from pydantic_yaml import parse_yaml_raw_as
@@ -10,7 +12,7 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from typing import List, Optional
 import warnings
 
-from constants import GENERATOR_MODEL, GENERATOR_PROMPT_CONFIG_PATH
+from constants import GENERATOR_PROMPT_CONFIG_PATH
 from .database import database
 
 
@@ -19,6 +21,12 @@ warnings.filterwarnings("ignore", message=".*default values have been modified t
 warnings.filterwarnings("ignore", message=".*Not enough SMs to use max_autotune_gemm mode.*")
 warnings.filterwarnings("ignore", message=".*does not support bfloat16 compilation natively.*")
 warnings.filterwarnings("ignore", message=".*for open-end generation.*")
+
+
+load_dotenv()
+NORMALIZER_MODEL_BASE = os.getenv("NORMALIZER_MODEL_BASE")
+if not NORMALIZER_MODEL_BASE:
+    raise ValueError("Missing `NORMALIZER_MODEL_BASE` env var. Please set it in your .env file.")
 
 
 class _Cache(BaseModel):
@@ -71,8 +79,6 @@ class PostNormalizer:
             num_beams=1,  # Greedy search
             renormalize_logits=False,
             temperature=1.0,
-            top_k=_TOP_K,
-            top_p=_TOP_P,
         )
         output_tokens = self._model.generate(**inputs, max_new_tokens=512, generation_config=generation_config)  # type: ignore[operator]
 
@@ -109,12 +115,12 @@ class PostNormalizer:
 
     def _init_model(self) -> None:
         print("Info: Initializing LLM...")
-        tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL)
+        tokenizer = AutoTokenizer.from_pretrained(NORMALIZER_MODEL_BASE)
         assert isinstance(tokenizer, PreTrainedTokenizerBase), (
             "`tokenizer` should be of type `PreTrainedTokenizerBase`."
         )
         model = AutoModelForCausalLM.from_pretrained(
-            GENERATOR_MODEL,
+            NORMALIZER_MODEL_BASE,
             device_map="auto",  # Accelerate shards across the available GPU(s)
             torch_dtype="auto",  # Auto-select the best dtype (e.g., bfloat16, float16, etc. depending on the GPU)
         ).eval()  # Set the model to evaluation mode
@@ -130,7 +136,7 @@ class PostNormalizer:
         #     "<|start_header_id|>assistant<|end_header_id|>\n\n"
         # )
 
-        _config = AutoConfig.from_pretrained(GENERATOR_MODEL)
+        _config = AutoConfig.from_pretrained(NORMALIZER_MODEL_BASE)
         # print("=" * 120)
         # print("CONFIGURATION:")
         # print("-" * 120)

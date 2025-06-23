@@ -21,6 +21,7 @@ dependencies = [
   "pendulum==3.1.0",
   "protobuf==6.31.1",
   "pydantic-yaml==1.5.1",
+  "python-dotenv==1.1.0",
   "selenium==4.33.0",
   # https://github.com/huggingface/trl/issues/2377#issuecomment-2503234915
   # "torch==2.7.1",

@@ -6,7 +6,7 @@ from trl import RewardTrainer, RewardConfig  # Hugging Face TRL for reward model
 from datasets import Dataset
 
 from libs import preference_dataset_manager
-from constants import REWARD_MODEL, REWARD_MODEL_DIR_PATH, PREFERENCE_DATASET_PATH
+from constants import REWARD_MODEL_BASE, REWARD_MODEL_PATH, PREFERENCE_DATASET_PATH
 import utils
 
 # Filter out specific torch warnings that can be safely ignored.
@@ -90,11 +90,11 @@ def main():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default=REWARD_MODEL,
+        default=REWARD_MODEL_BASE,
         help="HuggingFace model name or path for the base reward model (e.g., 'facebook/opt-125m').",
     )
     parser.add_argument(
-        "--output_dir", type=str, default=REWARD_MODEL_DIR_PATH, help="Directory to save the trained reward model."
+        "--output_dir", type=str, default=REWARD_MODEL_PATH, help="Directory to save the trained reward model."
     )
     parser.add_argument("--learning_rate", type=float, default=3e-6, help="Learning rate for reward model fine-tuning.")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs.")
