@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #------------------------------------------------------------------------------
 # Entrypoint for HF Space container.
 # 1. If $GIT_SSH_PRIVATE_KEY is present, create ~/.ssh/id_ed25519 from it,
@@ -12,7 +12,7 @@ if [[ -n "${GIT_SSH_PRIVATE_KEY:-}" ]]; then
   echo "Info: Configuring SSH key for Git pushes…"
 
   if [[ -z "${GIT_USER_NAME:-}" ]] || [[ -z "${GIT_USER_EMAIL:-}" ]] || [[ -z "${GIT_REMOTE_URL:-}" ]]; then
-    echo "Error: `GIT_USER_NAME`, `GIT_USER_EMAIL` and `GIT_REMOTE_URL` must be set when `GIT_SSH_PRIVATE_KEY` is provided."
+    echo "Error: 'GIT_USER_NAME', 'GIT_USER_EMAIL' and 'GIT_REMOTE_URL' must be set when 'GIT_SSH_PRIVATE_KEY' is provided."
     exit 1
   fi
 
